@@ -85,7 +85,7 @@ screens.options = () => {
     const t = parts.length ? parts.join(' · ') : 'Appuie sur des boutons pour les voir ici.';
     if (padLive.textContent !== t) padLive.textContent = t;
   };
-  const actions = [['left', 'Gauche'], ['right', 'Droite'], ['up', 'Haut / saut'], ['down', 'Bas'], ['attack', 'Attaque'], ['special', 'Spécial'], ['jump', 'Saut'], ['shield', 'Bouclier / esquive'], ['smash', 'Attaque smash'], ['start', 'Pause']];
+  const actions = [['left', 'Gauche'], ['right', 'Droite'], ['up', 'Haut / saut'], ['down', 'Bas'], ['attack', 'Attaque'], ['special', 'Spécial'], ['jump', 'Saut'], ['shield', 'Bouclier / esquive'], ['smash', 'Attaque smash'], ['grab', 'Chope'], ['start', 'Pause']];
   const onKey = (e) => {
     if (!waiting) return;
     e.preventDefault(); e.stopPropagation();
@@ -108,7 +108,7 @@ screens.options = () => {
       h('button', { class: 'btn ghost', onclick: () => { S.keymaps[slot] = JSON.parse(JSON.stringify(DEFAULT_KEYS[slot])); saveSettings(); render(); } }, 'Touches par défaut'));
     const pads = getPads();
     if (!S.padMap) S.padMap = JSON.parse(JSON.stringify(DEFAULT_PAD));
-    const padActions = [['attack', 'Attaque'], ['special', 'Spécial'], ['jump', 'Saut'], ['shield', 'Bouclier / esquive'], ['smash', 'Attaque smash (en plus du stick droit)'], ['start', 'Pause']];
+    const padActions = [['attack', 'Attaque'], ['special', 'Spécial'], ['jump', 'Saut'], ['shield', 'Bouclier / esquive'], ['grab', 'Chope'], ['smash', 'Attaque smash (en plus du stick droit)'], ['start', 'Pause']];
     const padTable = h('div', { class: 'card' }, h('h2', null, 'Manettes'),
       h('p', null, pads.length ? pads.map((p) => 'Manette ' + (p.index + 1) + ' : ' + p.id.slice(0, 48)).join(' · ') : 'Aucune manette détectée. Branche-la et appuie sur un bouton.'),
       padLive,
@@ -118,7 +118,7 @@ screens.options = () => {
           waitingPad = a; render();
           capturePadButton((i, n) => { S.padMap[a] = [n]; waitingPad = null; saveSettings(); render(); });
         } }, waitingPad === a ? 'Appuie sur un bouton…' : (S.padMap[a] || []).map(padButtonName).join(' / ') || '—')))))),
-      h('p', { class: 'muted small' }, 'Noms des boutons : Xbox · Switch · PlayStation. Déplacement : stick gauche ou croix. Stick droit : attaques smash. Dans les menus : bouton bas pour valider, bouton droit pour revenir, Start pour lancer le combat.'),
+      h('p', { class: 'muted small' }, 'Noms des boutons : Xbox · Switch · PlayStation. Déplacement : stick gauche ou croix. Stick droit : attaques smash. Chope : RB, ou bouclier + attaque. Dans les menus : bouton bas pour valider, bouton droit pour revenir, Start pour lancer le combat.'),
       h('button', { class: 'btn ghost', onclick: () => { S.padMap = JSON.parse(JSON.stringify(DEFAULT_PAD)); saveSettings(); render(); } }, 'Boutons par défaut'));
     body.append(
       h('div', { class: 'opt-cols' }, keyTable(0), keyTable(1), padTable),
@@ -132,7 +132,8 @@ screens.options = () => {
           slider('Étourdissement', S.constants.hitstun, (v) => { S.constants.hitstun = v; applySettings(); saveSettings(); }, { min: 0.2, max: 0.6, step: 0.01, fmt: (v) => v.toFixed(2) }),
           slider('Vitesse du jeu', S.constants.gameSpeed, (v) => { S.constants.gameSpeed = v; applySettings(); saveSettings(); }, { min: 0.5, max: 1.5, step: 0.05, fmt: (v) => Math.round(v * 100) + ' %' }),
           check('Sauter avec la direction haut', S.constants.tapJump, (v) => { S.constants.tapJump = v; applySettings(); saveSettings(); }),
-          h('button', { class: 'btn ghost', onclick: () => { S.constants = { launch: 0.042, decay: 0.06, hitstun: 0.4, tumbleKB: 80, shieldMax: 50, ledgeTime: 300, respawnInvuln: 120, tapJump: true, di: 15, gameSpeed: 1 }; applySettings(); saveSettings(); render(); } }, 'Valeurs par défaut')),
+          check('Esquive aérienne façon Melee (wavedash)', !S.constants.ssfAirdodge, (v) => { S.constants.ssfAirdodge = !v; applySettings(); saveSettings(); }),
+          h('button', { class: 'btn ghost', onclick: () => { S.constants = { launch: 0.048, decay: 0.08, hitstun: 0.4, tumbleKB: 80, shieldMax: 50, ledgeTime: 300, respawnInvuln: 120, tapJump: true, di: 15, gameSpeed: 1, ssfAirdodge: true, physVer: 2 }; applySettings(); saveSettings(); render(); } }, 'Valeurs par défaut')),
         app.player ? null : h('div', { class: 'card' }, h('h2', null, 'Sauvegardes'),
           h('p', { class: 'muted' }, 'Tes persos et stages sont gardés dans ce navigateur / ce logiciel. Exporte-les pour les partager ou les sauvegarder.'),
           h('button', { class: 'btn', onclick: () => download('platfight-bibliotheque.json', JSON.stringify({ format: 'platfight-library', fighters: app.fighters.filter((f) => !f.builtin), stages: app.stages.filter((s) => !s.builtin) })) }, 'Exporter toute la bibliothèque'),

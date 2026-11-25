@@ -154,7 +154,7 @@ export class Match {
     sfx('hit', dmg + kb / 20);
     const hb = target.hurtboxes()[0];
     this.fx.spark((hb[0] + hb[2]) / 2, (hb[1] + hb[3]) / 2, dmg, kb > 100 ? '#ffd23f' : '#fff');
-    if (kb > 110) this.fx.shake = Math.min(8, kb / 25);
+    if (kb > 60) this.fx.shake = Math.min(10, kb / 16);
   }
 
   togglePause() {

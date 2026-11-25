@@ -12,7 +12,7 @@ export class CPU {
 
   think(match) {
     const f = this.f, o = this.out;
-    o.attack = o.special = o.jump = o.smash = false;
+    o.attack = o.special = o.jump = o.smash = o.grab = false;
     if (this.holdJump > 0) { this.holdJump--; o.jump = this.holdJump > 0 ? 'hold' : false; }
     if (f.dead) { o.x = 0; o.y = 0; return this.flush(); }
     const st = match.stage;
@@ -27,14 +27,31 @@ export class CPU {
       if (d < best) { best = d; tgt = e; }
     }
 
+    // En train de tenir quelqu'un : projeter (ou frapper)
+    if (f.state === 'holding') {
+      o.x = 0; o.y = 0;
+      if (f.stateT > 14 && Math.random() < 0.1) {
+        const p = Math.random();
+        if (p < 0.35) o.x = f.facing; else if (p < 0.6) o.x = -f.facing; else if (p < 0.8) o.y = -1; else o.y = 1;
+      } else if (Math.random() < 0.06) o.attack = true;
+      return this.flush();
+    }
+    // Tenu par quelqu'un : marteler le stick pour se libérer
+    if (f.state === 'grabbed') {
+      o.x = f.stateT % 4 < 2 ? 0 : (f.stateT % 8 < 4 ? 1 : -1);
+      o.y = 0;
+      return this.flush();
+    }
+
     // Accroché au rebord : remonter
     if (f.state === 'ledge') {
       o.x = 0; o.y = 0;
       if (f.ledgeT > 12 + (9 - this.level) * 3) {
         const r = Math.random();
-        if (r < 0.4) o.jump = true;
-        else if (r < 0.7) { o.y = -1; }
-        else o.attack = true;
+        if (r < 0.35) o.jump = true;
+        else if (r < 0.6) { o.y = -1; }
+        else if (r < 0.8) o.attack = true;
+        else o.shield = true;
       }
       return this.flush();
     }
@@ -91,7 +108,9 @@ export class CPU {
         else { o.x = facingOk ? f.facing : -f.facing; o.attack = true; }
       } else {
         const r = Math.random();
-        if (!facingOk) { o.x = Math.sign(dx); this.cool = 2; }
+        // Chope : surtout contre un adversaire qui se protège
+        if (facingOk && Math.abs(dy) < 20 && (['shield', 'shieldstun'].includes(tgt.state) ? r < 0.7 : r < 0.1)) o.grab = true;
+        else if (!facingOk) { o.x = Math.sign(dx); this.cool = 2; }
         else if (dy < -16) { o.y = -0.6; if (tgt.percent > 80 && r < 0.4) o.smash = true; else o.attack = true; }
         else if (tgt.percent > 90 && r < 0.35) { o.x = f.facing * 0.6; o.smash = true; }
         else if (r < 0.15) { o.special = true; o.x = r < 0.08 ? f.facing : 0; }

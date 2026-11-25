@@ -57,6 +57,7 @@ export async function loadPlayerSettings() {
   const st = await store.get('settings', settingsKey());
   if (st) Object.assign(app.settings, st, { keymaps: st.keymaps || app.settings.keymaps, padMap: st.padMap || app.settings.padMap });
   if (app.player?.rules && !st) app.settings.rules = { ...app.settings.rules, ...app.player.rules };
+  migrateSettings();
   applySettings();
 }
 
@@ -68,7 +69,20 @@ export async function loadLibrary() {
   app.stages = [training, ...ss.filter((s) => s && s.format === 'platfight-stage').sort((a, b) => (a.name || '').localeCompare(b.name || ''))];
   const st = await store.get('settings', 'main');
   if (st) Object.assign(app.settings, st, { keymaps: st.keymaps || app.settings.keymaps, padMap: st.padMap || app.settings.padMap });
+  migrateSettings();
   applySettings();
+}
+
+// Mise à niveau des réglages enregistrés par une ancienne version
+function migrateSettings() {
+  const S = app.settings;
+  if (!S.constants) S.constants = { ...K };
+  if (S.constants.physVer !== 2) Object.assign(S.constants, { launch: 0.048, decay: 0.08, ssfAirdodge: true, physVer: 2 });
+  (S.keymaps || []).forEach((k, i) => { if (k && !k.grab && DEFAULT_KEYS[i]) k.grab = [...DEFAULT_KEYS[i].grab]; });
+  if (S.padMap && !S.padMap.grab) {
+    S.padMap.grab = [5];
+    S.padMap.shield = (S.padMap.shield || []).filter((n) => n !== 5);
+  }
 }
 
 export function applySettings() {

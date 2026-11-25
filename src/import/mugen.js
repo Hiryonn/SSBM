@@ -81,7 +81,7 @@ export function makeMove(slot, animNo, anims) {
     const first = anim.frames.findIndex((f) => f.c1.length);
     m.charge = Math.max(0, first - 1);
   }
-  if (slot === 'bair') m.flip = true;
+  if (slot === 'bair' || slot === 'bthrow') m.flip = true;
   if (slot === 'upB') { m.vy = -8.5; m.helpless = true; }
   if (slot === 'sideB') { m.vx = 3; }
   return m;
@@ -120,7 +120,8 @@ function autoMoves(anims, cmdStates) {
   fill(['neutralB', 'sideB', 'upB', 'downB', 'fsmash', 'usmash', 'dsmash'], special);
   // Recyclage : chaque emplacement a au moins quelque chose.
   const reuse = { fair: 'nair', bair: 'nair', uair: 'utilt', dash: 'ftilt', fsmash: 'ftilt', usmash: 'utilt', dsmash: 'dtilt',
-    ledgeAtk: 'ftilt', getupAtk: 'dtilt', nair: 'jab', dair: 'dtilt', sideB: 'ftilt', upB: 'utilt', downB: 'dtilt', neutralB: 'jab' };
+    ledgeAtk: 'ftilt', getupAtk: 'dtilt', nair: 'jab', dair: 'dtilt', sideB: 'ftilt', upB: 'utilt', downB: 'dtilt', neutralB: 'jab',
+    grab: 'jab', pummel: 'jab', fthrow: 'ftilt', bthrow: 'ftilt', uthrow: 'utilt', dthrow: 'dtilt' };
   for (const [slot] of MOVE_SLOTS) {
     if (!moves[slot] && reuse[slot] && moves[reuse[slot]]) take(slot, moves[reuse[slot]].anim);
     if (!moves[slot]) moves[slot] = makeMove(slot, null, anims);

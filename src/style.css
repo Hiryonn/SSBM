@@ -194,6 +194,8 @@ table.keys td:last-child { text-align: right; }
 .list-item { display: flex; flex-direction: column; align-items: flex-start; width: 100%; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; cursor: pointer; text-align: left; min-height: 40px; }
 .list-item:hover { background: var(--panel); }
 .list-item.on { background: var(--panel2); border-color: var(--red); }
+.list-item.drop { border-color: var(--yellow); border-style: dashed; background: var(--panel); }
+.list-item[draggable] { cursor: grab; }
 .list-item.empty span { color: var(--mute); }
 .list-item small { color: var(--mute); font-size: 12px; }
 .sword { font-style: normal; color: var(--red); }

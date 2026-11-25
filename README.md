@@ -100,23 +100,16 @@ Il faut [Node.js](https://nodejs.org) (version LTS). Pour les mises à jour auto
 
 ## Modifier le code et reconstruire
 
-Il faut [Node.js](https://nodejs.org) 18 ou plus.
-
-```
-npm install
-node build.mjs            # crée dist/index.html
-cd desktop
-copy ..\dist\index.html .
-npm install
-npm run exe               # crée desktop/sortie/PlatFight-Studio-1.0.0.exe
-npm run installeur        # ou un installeur classique
-```
-
-Organisation du code (`src/`) :
+Le code du jeu est dans `src/` :
 
 - `import/` : lecture des formats Mugen (sff, air, def, cmd, act) et des zip.
-- `engine/` : moteur (personnage, stage, match, IA, entrées, sons).
-- `ui/` : écrans (menus, combat, import, éditeurs).
-- `data/` : formats, bibliothèque, contenu intégré.
+- `engine/` : moteur (personnage, chopes, stage, match, IA, entrées, sons).
+- `ui/` : écrans (menus, combat, import, éditeurs, Créer mon jeu).
+- `data/` : formats, bibliothèque, jeux exportés, contenu intégré.
 
-Les persos et décors importés restent la propriété de leurs auteurs (et de Nintendo pour les personnages) : garde-les pour un usage personnel.
+`node build.mjs` assemble le jeu dans `dist/index.html` (version web) et `builder/index.html` (version Windows). Ne modifie pas ces deux fichiers à la main.
+
+Pour fabriquer le .exe :
+
+- **sur ton PC** : `builder/build.bat` (ou `mettre-a-jour.bat`, qui place en plus le résultat dans `PlatFight-Studio-Windows`) ;
+- **sur GitHub** : publie une Release avec un tag du type `v1.2.0` (ou lance le workflow à la main dans l'onglet Actions) ; le .zip et le .exe portable sont ajoutés à la Release. Voir `builder/LISEZMOI.md`.

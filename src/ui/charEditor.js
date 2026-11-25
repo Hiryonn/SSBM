@@ -11,7 +11,7 @@ import { toBase64 } from '../import/inflate.js';
 import { launchTraining } from './menus.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
-const CAT_LABEL = { sol: 'Au sol', smash: 'Smashs', air: 'Aériens', special: 'Spéciaux' };
+const CAT_LABEL = { sol: 'Au sol', smash: 'Smashs', air: 'Aériens', special: 'Spéciaux', chope: 'Chopes' };
 
 screens.chareditor = (id, keep) => {
   const src = app.fighters.find((f) => f.id === id);
@@ -95,6 +95,16 @@ screens.chareditor = (id, keep) => {
     for (const [slot, label] of STATE_SLOTS) { const a = def.states[slot]; if (a != null) (u[a] = u[a] || []).push(label); }
     return u;
   };
+  // Échange deux emplacements de coups (ex. une anim importée au mauvais endroit)
+  const swapMoves = (a, b) => {
+    if (!a || !b || a === b) return;
+    [def.moves[a], def.moves[b]] = [def.moves[b], def.moves[a]];
+    commit();
+    const cur = def.moves[E.move];
+    if (cur?.anim != null && def.anims[cur.anim]) setAnim(cur.anim);
+    renderLeft(); renderRight();
+    toast('Échangé : ' + MOVE_INFO[a].label + ' ⇄ ' + MOVE_INFO[b].label);
+  };
   const animOptions = (withNone = true) => [...(withNone ? [['', '— aucune —']] : []), ...animNos().map((n) => [n, n + ' · ' + def.anims[n].frames.length + ' él.' + (def.anims[n].frames.some((f) => f.c1.length) ? ' · ⚔' : '')])];
   const setAnim = (n, elem = 0) => {
     E.anim = n; E.elem = Math.max(0, Math.min(elem, (def.anims[n]?.frames.length || 1) - 1)); E.selBox = null;
@@ -113,11 +123,22 @@ screens.chareditor = (id, keep) => {
     clear(leftBody);
     if (E.tab === 'moves') {
       let cat = null;
-      for (const [slot, label, c] of MOVE_SLOTS) {
+      // Regroupés par catégorie (Au sol, Smashs, Aériens, Spéciaux, Chopes)
+      const order = Object.keys(CAT_LABEL);
+      const slots = [...MOVE_SLOTS].sort((a, b) => order.indexOf(a[2]) - order.indexOf(b[2]));
+      for (const [slot, label, c] of slots) {
         if (c !== cat) { cat = c; leftBody.append(h('div', { class: 'list-head' }, CAT_LABEL[c] || c)); }
         const m = def.moves[slot];
         const hits = m?.hits?.length || 0;
-        leftBody.append(h('button', { class: 'list-item' + (E.move === slot ? ' on' : '') + (m?.anim == null ? ' empty' : ''), onclick: () => { E.move = slot; if (m?.anim != null && def.anims[m.anim]) setAnim(m.anim); renderLeft(); renderRight(); } },
+        leftBody.append(h('button', {
+          class: 'list-item' + (E.move === slot ? ' on' : '') + (m?.anim == null ? ' empty' : ''),
+          onclick: () => { E.move = slot; if (m?.anim != null && def.anims[m.anim]) setAnim(m.anim); renderLeft(); renderRight(); },
+          draggable: 'true', title: 'Glisse sur un autre coup pour les échanger',
+          ondragstart: (e) => { e.dataTransfer.setData('text/plain', 'move:' + slot); e.dataTransfer.effectAllowed = 'move'; },
+          ondragover: (e) => { e.preventDefault(); e.currentTarget.classList.add('drop'); },
+          ondragleave: (e) => e.currentTarget.classList.remove('drop'),
+          ondrop: (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop'); const d = e.dataTransfer.getData('text/plain') || ''; if (d.startsWith('move:')) swapMoves(d.slice(5), slot); },
+        },
           h('span', null, label), h('small', null, m?.anim == null ? 'vide' : 'anim ' + m.anim + (hits ? ' · ' + hits + ' coup' + (hits > 1 ? 's' : '') + ' · ' + m.hits.reduce((s, x) => s + (+x.dmg || 0), 0) + '%' : ' · aucun coup'))));
       }
     } else if (E.tab === 'anims') {
@@ -322,7 +343,9 @@ screens.chareditor = (id, keep) => {
     const animCount = curAnim()?.frames.length || 0;
     wrap.append(h('div', { class: 'row gap' },
       select('Animation', m.anim ?? '', animOptions(), (v) => { m.anim = v === '' ? null : +v; if (m.anim != null) { m.hits = autoHits(def.anims[m.anim], { ...info.d }); setAnim(m.anim); } commit(); renderLeft(); renderRight(); }),
-      h('button', { class: 'btn small', title: 'Prendre l\'animation affichée au centre', onclick: () => { m.anim = E.anim; m.hits = autoHits(curAnim(), { ...info.d }); commit(); renderLeft(); renderRight(); renderTimeline(); } }, 'Utiliser l\'anim affichée')));
+      h('button', { class: 'btn small', title: 'Prendre l\'animation affichée au centre', onclick: () => { m.anim = E.anim; m.hits = autoHits(curAnim(), { ...info.d }); commit(); renderLeft(); renderRight(); renderTimeline(); } }, 'Utiliser l\'anim affichée')),
+      h('div', { class: 'row gap' },
+        select('Échanger avec un autre coup', '', [['', '— choisir —'], ...MOVE_SLOTS.filter(([id]) => id !== slot).map(([id, label]) => [id, label + (def.moves[id]?.anim != null ? ' (anim ' + def.moves[id].anim + ')' : ' (vide)')])], (v) => swapMoves(slot, v))));
     if (m.anim == null) { wrap.append(h('p', { class: 'muted' }, 'Choisis une animation pour ce coup.')); return wrap; }
     if (m.anim !== E.anim) wrap.append(h('p', { class: 'warn' }, 'L\'aperçu montre une autre anim. ', h('button', { class: 'link', onclick: () => setAnim(m.anim) }, 'Afficher l\'anim ' + m.anim)));
     // Groupes de coups
