@@ -100,6 +100,10 @@ La physique (éjection, vitesse…) se règle dans la page Jeu ; les joueurs peu
 
 Le .exe d'un jeu exporté garde l'icône de PlatFight Studio.
 
+## Ressources de Super Smash Flash
+
+Le dossier `ressources/smash-flash/` contient les planches de sprites, décors, sons, musiques et logos du jeu Super Smash Flash (2006), pour fabriquer tes persos et stages. Voir `ressources/smash-flash/LISEZMOI.md`.
+
 ## Fichiers
 
 - `.pfchar.json` : un perso PlatFight (sprites, anims, coups, stats, couleurs).

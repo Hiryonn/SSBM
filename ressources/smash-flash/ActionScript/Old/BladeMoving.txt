@@ -1,0 +1,150 @@
+onClipEvent (load) {
+   tempspeed = 0;
+   speed = 0;
+   maxmove = 15;
+   jumping = true;
+   jump = 10;
+   moving = false;
+   movingright = false;
+   movingleft = false;
+   onground = false;
+   facing = "right";
+   attacking = false;
+   function attack() {
+      gotoAndPlay("attack");
+   }
+   function running() {
+      this.gotoAndStop("running");
+   }
+   function ducka() {
+      this.gotoAndPlay("ducking");
+   }
+   function standing() {
+      this.gotoAndPlay("standing");
+   }
+   function jumpa() {
+      this.gotoAndPlay("jumping");
+   }
+   function goright() {
+      if (Key.isDown(Key.RIGHT) && speed<15) {
+         if (!movingright and !jumping) {
+            if (facing !== "right") {
+               this._x = this._x-this._width;
+               this._xscale = Math.abs(this._xscale);
+            }
+            facing = "right";
+            running();
+         } else if (!movingright and jumping) {
+            if (facing !== "right") {
+               this._x = this._x-this._width;
+               this._xscale = Math.abs(this._xscale);
+            }
+            facing = "right";
+         }
+         if (onground) {
+            running();
+         }
+         this._x += speed;
+         tempspeed = speed;
+         speed += .5;
+         movingright = true;
+         movingleft = false;
+      } else {
+         movingright = false;
+      }
+   }
+   function goleft() {
+      if (Key.isDown(Key.LEFT) && speed>-15) {
+         if (!movingleft and !jumping) {
+            if (facing !== "left") {
+               this._x = this._x+this._width;
+               this._xscale = -Math.abs(this._xscale);
+            }
+            facing = "left";
+            running();
+         } else if (!movingleft and jumping) {
+            if (facing !== "left") {
+               this._x = this._x+this._width;
+               this._xscale = -Math.abs(this._xscale);
+            }
+            facing = "left";
+         }
+         if (onground) {
+            running();
+         }
+         this._x += speed;
+         tempspeed = speed;
+         speed -= .5;
+         movingleft = true;
+         movingright = false;
+      } else {
+         movingleft = false;
+      }
+   }
+   function bladeslow() {
+      if (!movingright and !movingleft and speed>0) {
+         this._x += speed;
+         tempspeed = speed;
+         speed -= 1;
+      }
+      if (!movingright and !movingleft and speed<0) {
+         this._x += speed;
+         tempspeed = speed;
+         speed += 1;
+      }
+   }
+   function bladejump() {
+      if (Key.isDown(Key.UP) and onground) {
+         if (onground) {
+            jumpa();
+         }
+         jumping = true;
+         jump = -15;
+         this._y += jump;
+         onground = false;
+      } else if (jumping and !onground) {
+         this._y += jump;
+         jump++;
+      }
+   }
+   function checkground() {
+      if (_root.ground.hitTest(this.feet)) {
+         if (jumping) {
+            standing();
+         }
+         onground = true;
+         jumping = false;
+         jump = 0;
+         this._y = 172.9;
+      } else {
+         onground = false;
+         jumping = true;
+      }
+   }
+   function checkspeed() {
+      if (speed>-1 and speed<1 and !movingleft and !movingright) {
+         speed = 0;
+      }
+   }
+   function checkifmoving() {
+      if (speed == 0 and !jumping and !movingright and !movingleft) {
+         standing();
+         moving = false;
+      }
+      
+   }
+}
+onClipEvent (enterFrame) {
+   if (this._y>400) {
+      this._x = 136;
+      this._y = 0;
+   }
+   checkduck();
+   checkifmoving();
+   checkground();
+   bladejump();
+   goright();
+   goleft();
+   bladeslow();
+   checkspeed();
+} 

@@ -1,0 +1,244 @@
+onClipEvent (load) {
+	function attack() {
+		_parent.blade.gotoAndPlay("attack");
+	}
+	function running() {
+		_parent.blade.gotoAndStop("running");
+	}
+	function ducka() {
+		_parent.blade.gotoAndPlay("ducking");
+	}
+	function standing() {
+		_parent.blade.gotoAndPlay("standing");
+	}
+	function jumpa() {
+		_parent.blade.gotoAndPlay("jumping");
+	}
+	function rolla() {
+		_parent.blade.gotoAndPlay("rolling");
+	}
+	function checkduck() {
+		if (_parent.speed == 0 and _parent.onground) {
+			if (Key.isDown(Key.CONTROL)) {
+				_parent.control = true;
+			} else {
+				_parent.control = false;
+			}
+			if (Key.isDown(Key.DOWN)) {
+				_parent.down = true;
+			} else {
+				_parent.down = false;
+			}
+			if (_parent.down and !_parent.ducking) {
+				_parent.ducking = true;
+				ducka();
+			}
+			if (!_parent.down and _parent.ducking and !_parent.control and !_parent.rolling and !_parent.rev) {
+				_parent.ducking = false;
+				stand();
+			}
+			if (_parent.ducking and _parent.control) {
+				if (!_parent.rev) {
+					rolla();
+				}
+				_parent.rev = true;
+				_parent.sounddelay++;
+				if (_parent.sounddelay>12) {
+					_parent.revving.start();
+					_parent.sounddelay = 0;
+				}
+			}
+			if (_parent.rev and !_parent.control) {
+				if (_parent.facing == "right") {
+					_parent.speed += 40;
+				} else if (_parent.facing == "left") {
+					_parent.speed -= 40;
+				}
+				_parent.rolling = true;
+				_parent.rev = false;
+				_parent.ducking = false;
+				_parent.shoot.start();
+			}
+		}
+	}
+	function checkattack() {
+		_parent.attackdelay++;
+		if (_parent.attackdelay>12 and Key.isDown(Key.CONTROL) and !_parent.ducking and !_parent.rev and !_parent.rolling) {
+			_parent.vulnerable = false;
+			_parent.attacking = true;
+			_parent.attackdelay = 0;
+			_parent.slash.start();
+			attack();
+		} else if (_parent.attacking) {
+			if (_parent.facing == "right" and _parent.speed<10) {
+				_parent.blade._x += 5;
+				_parent.speed += 5;
+			} else if (_parent.facing == "left" and _parent.speed>-10) {
+				_parent.blade._x -= 5;
+				_parent.speed -= 5;
+			}
+		}
+		if (_parent.attackdelay>4) {
+			_parent.vulnerable = true;
+			_parent.attacking = false;
+		}
+		if (!_parent.onground and _parent.attackdelay == 4) {
+			jumpa();
+		}
+		if (_parent.onground and _parent.attackdelay == 4) {
+			_parent.attacking = false;
+			standing();
+		}
+	}
+	function goright() {
+		if (Key.isDown(Key.RIGHT) && _parent.speed<_parent.maxmove and !_parent.ducking and !_parent.rev and !_parent.rolling and this.hitTest(_parent.blade.feet)) {
+			if (!_parent.movingright and !_parent.jumping) {
+				if (_parent.facing !== "right") {
+					_parent.blade._x = _parent.blade._x-_parent.blade._width;
+					_parent.blade._xscale = Math.abs(_parent.blade._xscale);
+				}
+				_parent.facing = "right";
+				if (_parent.vulnerable) {
+					running();
+				}
+			} else if (!_parent.movingright and _parent.jumping) {
+				if (_parent.facing !== "right") {
+					_parent.blade._x = _parent.blade._x-_parent.blade._width;
+					_parent.blade._xscale = Math.abs(_parent.blade._xscale);
+				}
+				_parent.facing = "right";
+			}
+			if (_parent.onground and _parent.vulnerable) {
+				running();
+			}
+			this._x -= _parent.speed;
+			_parent.tempspeed = _parent.speed;
+			_parent.speed += .5;
+			_parent.movingright = true;
+			_parent.movingleft = false;
+		} else {
+			_parent.movingright = false;
+		}
+	}
+	function goleft() {
+		if (Key.isDown(Key.LEFT) && _parent.speed>-_parent.maxmove and !_parent.ducking and !_parent.rev and !_parent.rolling and this.hitTest(_parent.blade.feet)) {
+			if (!_parent.movingleft and !_parent.jumping) {
+				if (_parent.facing !== "left") {
+					_parent.blade._x = _parent.blade._x+_parent.blade._width;
+					_parent.blade._xscale = -Math.abs(_parent.blade._xscale);
+				}
+				_parent.facing = "left";
+				if (_parent.vulnerable) {
+					running();
+				}
+			} else if (!_parent.movingleft and _parent.jumping) {
+				if (_parent.facing !== "left") {
+					_parent.blade._x = _parent.blade._x+_parent.blade._width;
+					_parent.blade._xscale = -Math.abs(_parent.blade._xscale);
+				}
+				_parent.facing = "left";
+			}
+			if (_parent.onground) {
+				if (_parent.vulnerable) {
+					running();
+				}
+			}
+			this._x -= _parent.speed;
+			_parent.tempspeed = _parent.speed;
+			_parent.speed -= .5;
+			_parent.movingleft = true;
+			_parent.movingright = false;
+		} else {
+			_parent.movingleft = false;
+		}
+	}
+	function bladeslow() {
+		if (!_parent.movingright and !_parent.movingleft and _parent.speed>0) {
+			this._x -= _parent.speed;
+			_parent.tempspeed = _parent.speed;
+			_parent.speed -= 1;
+		}
+		if (!_parent.movingright and !_parent.movingleft and _parent.speed<0) {
+			this._x -= _parent.speed;
+			_parent.tempspeed = _parent.speed;
+			_parent.speed += 1;
+		}
+	}
+	function bladejump() {
+		if (Key.isDown(Key.SPACE) and _parent.onground) {
+			if (_parent.onground) {
+				_parent.rev = false;
+				_parent.rolling = false;
+				_parent.ducking = false;
+				_parent.jumpsound.start();
+				jumpa();
+			}
+			_parent.jumping = true;
+			_parent.jump = _parent.maxjump;
+			this._y -= _parent.jump;
+			_parent.onground = false;
+		} else if (_parent.jumping and !_parent.onground) {
+			this._y -= _parent.jump;
+			_parent.jump++;
+		}
+		if (Key.isDown(Key.SPACE) and _parent.onground and _parent.ducking) {
+			if (_parent.onground) {
+				_parent.jumpsound.start();
+				jumpa();
+			}
+			_parent.ducking = false;
+			_parent.jumping = true;
+			_parent.jump = _parent.maxjump+5;
+			this._y -= _parent.jump;
+			_parent.onground = false;
+		}
+	}
+	function checkground() {
+		if (this.hitTest(_parent.blade.feet) and _parent.jump>0 and _parent.blade._y<this._y) {
+			if (_parent.jumping) {
+				standing();
+			}
+			_parent.onground = true;
+			_parent.jumping = false;
+			_parent.jump = 0;
+			//_parent.blade._y -= 172.9;
+		}// else {
+			//_parent.onground = false;
+			//_parent.jumping = true;
+		//}
+	}
+	function checkspeed() {
+		if (_parent.speed>-1 and _parent.speed<1 and !_parent.movingleft and !_parent.movingright) {
+			_parent.rolling = false;
+			_parent.speed = 0;
+		}
+	}
+	function checkifmoving() {
+		if (_parent.speed == 0 and !_parent.jumping and !_parent.movingright and !_parent.movingleft and !_parent.rolling) {
+			if (!_parent.attacking and !_parent.ducking and !_parent.rev and !_parent.rolling) {
+				standing();
+			}
+			_parent.moving = false;
+		}
+	}
+}
+onClipEvent (enterFrame) {
+	if (this.hitTest(_parent.blade.feet) and _parent.jump>0 and _parent.blade._y<this._y) {
+		bladejump();
+		checkifmoving();
+		goright();
+		goleft();
+		checkattack();
+		checkground();
+		checkduck();
+		bladeslow();
+		checkspeed();
+	} else {
+		if (_parent.jump>.5 or _parent.jump<-.5) {
+			this._y -= _parent.jump;
+			this._x -= _parent.speed;
+		} else {
+			this._x -= _parent.speed;
+		}
+	}
+}

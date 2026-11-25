@@ -1,0 +1,70 @@
+Characters:
+
+-Mario
+-Blade
+-Captain Falcon
+-Sheik
+-Samus
+-Zelda
+-Kirby
+-Fox
+-Link
+-Megaman X
+-Sonic
+-Tails
+-Knuckles
+-Pikachu
+
+Hidden Characters:
+
+-Luigi
+-Jigglypuff
+-Cloud
+-Crono
+-Naruto
+-Shadow
+-Super Sonic
+-Zero (From Megaman X 3)
+-Young Link
+-Inuyasha
+-Game & Watch
+-Mewtwo
+-Mr. Incredible
+-Blue
+-Lloyd
+
+-----------------------
+
+Bosses:
+
+Master Hand
+
+-----------------------
+
+Stages:
+
+-Bowser's Castle (On top, inside)
+-Hyrule Castle
+
+------------------------
+
+Game Modes:
+
+-Adventure Mode
+-VS Mode
+-Training Mode
+Unlockable:
+-Classic Mode
+-All Star Mode
+
+------------------------
+
+Options:
+
+-Enemy Level of Difficulty
+-Damage Percentage (50-200)
+
+Extra:
+
+-Cheats
+-Cutscenes

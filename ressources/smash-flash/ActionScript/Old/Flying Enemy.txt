@@ -1,0 +1,82 @@
+onClipEvent (load) {
+	xspeed = 4;
+	yspeed = 4;
+	facing = "right";
+	tempx1 = 1;
+	tempx2 = 1;
+	tempy1 = 1;
+	tempy2 = 1;
+	fasterx = 0;
+	fastery = 0;
+	hitting = false;
+	function setSpeed() {
+		fasterx = _parent.ground.speed;
+		fastery = _parent.ground.jump;
+	}
+	function goombamove() {
+		if (_parent.player1._x<this._x) {
+			this._x -= xspeed+fasterx;
+		} else if (_parent.player1._x>this._x) {
+			this._x += xspeed-fasterx;
+		}
+		if (_parent.player1._y<this._y) {
+			this._y -= yspeed+fastery;
+		} else if (_parent.player1._y>this._y) {
+			this._y += yspeed-fastery;
+		}
+	}
+	function checkface() {
+		if (_parent.player1._x+(_parent.player1._width/2)<this._x+(this._width/2) and !hitting) {
+			if (facing == "right") {
+				this._x = this._x+this._width;
+				this._xscale = -Math.abs(this._xscale);
+				facing = "left";
+			}
+		} else if (_parent.player1._x+(_parent.player1._width/2)>this._x+(this._width/2)) {
+			if (facing == "left" and !hitting) {
+				this._x = this._x-this._width;
+				this._xscale = Math.abs(this._xscale);
+				facing = "right";
+			}
+		}
+	}
+	function checkhit() {
+		if (this.hitTest(_parent.player1) and _parent.ground.onground == true and _parent.ground.vulnerable == true and !hitting and !bounceoff) {
+			_parent.ground.hit();
+			bounceoff = true;
+		} else if (this.hitTest(_parent.player1.attackbox) and _parent.ground.rolling == true) {
+			hitting = true;
+			this.gotoAndPlay("dead");
+			_parent.punch.start();
+		} else if (this.hitTest(_parent.player1.attackbox) and _parent.ground.rev == true) {
+			hitting = true;
+			this.gotoAndPlay("dead");
+			_parent.punch.start();
+		} else if (this.hitTest(_parent.player1.airball) and _parent.ground.onground == false and _parent.ground.vulnerable == true and !hitting and !bounceoff) {
+			_parent.ground.hit();
+			bounceoff = true;
+		} else if (this.hitTest(_parent.player1.attackbox) and _parent.ground.vulnerable == false and _parent.ground.facing == "right" and _parent.player1._x<this._x and !hitting) {
+			hitting = true;
+			this.gotoAndPlay("dead");
+			_parent.punch.start();
+		} else if (this.hitTest(_parent.player1.attackbox) and _parent.ground.vulnerable == false and _parent.ground.facing == "left" and _parent.player1._x>this._x and !hitting) {
+			hitting = true;
+			this.gotoAndPlay("dead");
+			_parent.punch.start();
+		} else {
+			hitting = false;
+			bounceoff = false;
+		}
+	}
+}
+onClipEvent (enterFrame) {
+	if ((Math.sqrt(Math.pow((this._x-_parent.player1._x), 2)+Math.pow(this._y-_parent.player1._y, 2)))<400) {
+		goombamove();
+		checkhit();
+		setSpeed();
+		checkface();
+	} else {
+		this._x -= _parent.ground.speed;
+		this._y -= _parent.ground.jump;
+	}
+}
