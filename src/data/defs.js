@@ -1,0 +1,71 @@
+// Définitions communes : emplacements de coups, états, valeurs par défaut.
+
+export const MOVE_SLOTS = [
+  // id, libellé, catégorie, valeurs par défaut
+  ['jab', 'Attaque neutre', 'sol', { dmg: 3, angle: 45, bkb: 12, kbg: 50 }],
+  ['ftilt', 'Attaque avant', 'sol', { dmg: 8, angle: 35, bkb: 22, kbg: 90 }],
+  ['utilt', 'Attaque haut', 'sol', { dmg: 7, angle: 85, bkb: 25, kbg: 95 }],
+  ['dtilt', 'Attaque bas', 'sol', { dmg: 6, angle: 75, bkb: 25, kbg: 80 }],
+  ['dash', 'Attaque en course', 'sol', { dmg: 9, angle: 45, bkb: 40, kbg: 70 }],
+  ['fsmash', 'Smash avant', 'smash', { dmg: 15, angle: 38, bkb: 35, kbg: 100 }],
+  ['usmash', 'Smash haut', 'smash', { dmg: 14, angle: 85, bkb: 35, kbg: 98 }],
+  ['dsmash', 'Smash bas', 'smash', { dmg: 13, angle: 30, bkb: 30, kbg: 95 }],
+  ['nair', 'Aérien neutre', 'air', { dmg: 8, angle: 45, bkb: 18, kbg: 95 }],
+  ['fair', 'Aérien avant', 'air', { dmg: 10, angle: 40, bkb: 22, kbg: 100 }],
+  ['bair', 'Aérien arrière', 'air', { dmg: 11, angle: 40, bkb: 25, kbg: 100 }],
+  ['uair', 'Aérien haut', 'air', { dmg: 7, angle: 85, bkb: 25, kbg: 95 }],
+  ['dair', 'Aérien bas', 'air', { dmg: 11, angle: 270, bkb: 20, kbg: 90 }],
+  ['neutralB', 'Spécial neutre', 'special', { dmg: 8, angle: 40, bkb: 25, kbg: 70 }],
+  ['sideB', 'Spécial côté', 'special', { dmg: 10, angle: 40, bkb: 30, kbg: 80 }],
+  ['upB', 'Spécial haut', 'special', { dmg: 6, angle: 80, bkb: 40, kbg: 70 }],
+  ['downB', 'Spécial bas', 'special', { dmg: 10, angle: 70, bkb: 35, kbg: 80 }],
+  ['ledgeAtk', 'Attaque depuis le rebord', 'sol', { dmg: 8, angle: 40, bkb: 40, kbg: 50 }],
+  ['getupAtk', 'Attaque de relevé', 'sol', { dmg: 7, angle: 45, bkb: 40, kbg: 50 }],
+];
+export const MOVE_INFO = Object.fromEntries(MOVE_SLOTS.map(([id, label, cat, d]) => [id, { label, cat, d }]));
+
+export const STATE_SLOTS = [
+  ['idle', 'Attente', [0]],
+  ['walk', 'Marche', [20, 21, 0]],
+  ['run', 'Course', [100, 20]],
+  ['crouch', 'Accroupi', [11, 10]],
+  ['jumpSquat', 'Impulsion de saut', [40, 0]],
+  ['jump', 'Saut (montée)', [41, 42, 40]],
+  ['doubleJump', 'Double saut', [42, 41]],
+  ['fall', 'Chute', [44, 45, 41]],
+  ['land', 'Atterrissage', [47, 40, 0]],
+  ['shield', 'Bouclier', [130, 120, 131, 0]],
+  ['roll', 'Roulade', [105, 100, 20]],
+  ['dodge', 'Esquive sur place', [131, 11, 130]],
+  ['airdodge', 'Esquive aérienne', [132, 44, 41]],
+  ['hurt', 'Touché (sol)', [5000, 5001, 5010]],
+  ['hurtAir', 'Touché (air)', [5030, 5035, 5000]],
+  ['tumble', 'Éjecté', [5050, 5030, 5000]],
+  ['lie', 'Au sol', [5110, 5100, 11]],
+  ['getup', 'Se relève', [5120, 0]],
+  ['helpless', 'Chute sans défense', [5050, 44, 41]],
+  ['ledge', 'Accroché au rebord', [41, 44]],
+  ['dizzy', 'Étourdi', [5300, 5000]],
+  ['taunt', 'Provocation', [195, 0]],
+  ['win', 'Victoire', [181, 180, 182, 0]],
+];
+
+export const DEFAULT_STATS = {
+  weight: 100,
+  walkSpeed: 1.3,
+  runSpeed: 2.6,
+  airSpeed: 1.7,
+  airAccel: 0.12,
+  gravity: 0.3,
+  fallSpeed: 4.2,
+  fastFallSpeed: 6.2,
+  jumpForce: 7.2,
+  shortHopForce: 4.6,
+  doubleJumpForce: 6.8,
+  jumps: 2,
+  traction: 0.12,
+  width: 18,
+  height: 46,
+};
+
+export const PLAYER_COLORS = ['#e8433f', '#3d7fff', '#f5c518', '#36c46b'];
