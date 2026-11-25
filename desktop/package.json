@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron .",
     "exe": "electron-builder --win portable --x64",
-    "installeur": "electron-builder --win nsis --x64"
+    "installeur": "electron-builder --win nsis --x64",
+    "exe:dossier": "electron-builder --win dir --x64"
   },
   "build": {
     "appId": "com.platfight.studio",

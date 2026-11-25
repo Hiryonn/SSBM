@@ -2,3 +2,6 @@ node_modules/
 desktop/node_modules/
 desktop/sortie/
 desktop/index.html
+PlatFight-Studio-Windows/PlatFight Studio/PlatFight Studio.exe
+package-lock.json
+desktop/package-lock.json

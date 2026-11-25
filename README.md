@@ -67,6 +67,18 @@ Pour un stage Mugen importé, le sol est posé par défaut de -200 à 200 : ajus
 
 Le dossier `PlatFight-contenu-MYTHOS/contenu` contient les 4 persos MYTHOS et le stage SSB64 déjà convertis : Importer → choisis ces fichiers `.json`.
 
+## Mettre à jour / reconstruire le .exe
+
+Double-clique sur **`mettre-a-jour.bat`** à la racine du dépôt. Il :
+
+1. récupère la dernière version depuis GitHub (si le dossier a été cloné avec Git) ;
+2. installe les outils nécessaires (la première fois seulement) ;
+3. reconstruit le jeu et l'application Windows ;
+4. place le résultat, `.exe` compris, dans `PlatFight-Studio-Windows\PlatFight Studio` ;
+5. propose de lancer le jeu.
+
+Il faut [Node.js](https://nodejs.org) (version LTS). Pour les mises à jour automatiques, il faut aussi [Git](https://git-scm.com) et avoir récupéré le dépôt avec `git clone https://github.com/Hiryonn/SSBM`. Tes persos et stages ne sont pas touchés.
+
 ## Modifier le code et reconstruire
 
 Il faut [Node.js](https://nodejs.org) 18 ou plus.
