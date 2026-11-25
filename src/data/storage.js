@@ -1,15 +1,16 @@
 // Bibliothèque locale (IndexedDB) avec repli en mémoire.
 const DB = 'platfight-studio';
-const STORES = ['fighters', 'stages', 'settings'];
+// fighters / stages : ancienne bibliothèque ; projects / pitems : projets enregistrés dans le navigateur
+const STORES = ['fighters', 'stages', 'settings', 'projects', 'pitems'];
 let dbp = null;
-const mem = { fighters: new Map(), stages: new Map(), settings: new Map() };
+const mem = { fighters: new Map(), stages: new Map(), settings: new Map(), projects: new Map(), pitems: new Map() };
 export let persistent = true;
 
 function open() {
   if (dbp) return dbp;
   dbp = new Promise((resolve) => {
     try {
-      const req = indexedDB.open(DB, 1);
+      const req = indexedDB.open(DB, 2);
       req.onupgradeneeded = () => { for (const s of STORES) if (!req.result.objectStoreNames.contains(s)) req.result.createObjectStore(s); };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => { persistent = false; resolve(null); };
@@ -64,4 +65,23 @@ export async function all(store) {
     }
   } catch (e) { persistent = false; }
   return [...mem[store].values()];
+}
+
+// Toutes les valeurs dont la clé commence par un préfixe (ex. "projet:persos:")
+export async function allPrefix(store, prefix) {
+  const out = [];
+  try {
+    const db = await open();
+    if (db) {
+      await new Promise((resolve) => {
+        const t = db.transaction(store, 'readonly');
+        const req = t.objectStore(store).openCursor(IDBKeyRange.bound(prefix, prefix + '\uffff'));
+        req.onsuccess = () => { const c = req.result; if (c) { out.push(c.value); mem[store].set(c.key, c.value); c.continue(); } else resolve(); };
+        req.onerror = () => resolve();
+      });
+      return out;
+    }
+  } catch (e) { persistent = false; }
+  for (const [k, v] of mem[store]) if (String(k).startsWith(prefix)) out.push(v);
+  return out;
 }

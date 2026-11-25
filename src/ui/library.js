@@ -40,7 +40,7 @@ function listScreen(kind) {
     go('stageeditor', s.id);
   };
   const el = h('div', { class: 'screen panel-screen' },
-    h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, isF ? 'Éditeur de persos' : 'Éditeur de stages'),
+    h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, isF ? 'Éditeur de persos' : 'Éditeur de stages'),
       h('button', { class: 'btn', onclick: () => importFiles(render) }, 'Ouvrir un fichier PlatFight…')),
     h('p', { class: 'muted pad' }, isF ? 'Choisis un perso à modifier. Les persos intégrés s\'ouvrent en copie.' : 'Choisis un stage à modifier, ou crée-en un vide.'),
     list);
@@ -126,7 +126,8 @@ screens.options = () => {
         h('div', { class: 'card' }, h('h2', null, 'Son'),
           slider('Effets', S.volume.sfx, (v) => { S.volume.sfx = v; applySettings(); saveSettings(); }, { fmt: (v) => Math.round(v * 100) + ' %' }),
           slider('Musique', S.volume.music, (v) => { S.volume.music = v; applySettings(); saveSettings(); }, { fmt: (v) => Math.round(v * 100) + ' %' })),
-        app.player ? null : h('div', { class: 'card' }, h('h2', null, 'Physique du jeu'),
+        // La physique se règle maintenant dans la page Jeu de chaque projet
+        null && h('div', { class: 'card' }, h('h2', null, 'Physique du jeu'),
           slider('Puissance d\'éjection', S.constants.launch, (v) => { S.constants.launch = v; applySettings(); saveSettings(); }, { min: 0.02, max: 0.08, step: 0.001, fmt: (v) => v.toFixed(3) }),
           slider('Freinage de l\'éjection', S.constants.decay, (v) => { S.constants.decay = v; applySettings(); saveSettings(); }, { min: 0.02, max: 0.15, step: 0.005, fmt: (v) => v.toFixed(3) }),
           slider('Étourdissement', S.constants.hitstun, (v) => { S.constants.hitstun = v; applySettings(); saveSettings(); }, { min: 0.2, max: 0.6, step: 0.01, fmt: (v) => v.toFixed(2) }),
@@ -134,13 +135,13 @@ screens.options = () => {
           check('Sauter avec la direction haut', S.constants.tapJump, (v) => { S.constants.tapJump = v; applySettings(); saveSettings(); }),
           check('Esquive aérienne façon Melee (wavedash)', !S.constants.ssfAirdodge, (v) => { S.constants.ssfAirdodge = !v; applySettings(); saveSettings(); }),
           h('button', { class: 'btn ghost', onclick: () => { S.constants = { launch: 0.048, decay: 0.08, hitstun: 0.4, tumbleKB: 80, shieldMax: 50, ledgeTime: 300, respawnInvuln: 120, tapJump: true, di: 15, gameSpeed: 1, ssfAirdodge: true, physVer: 2 }; applySettings(); saveSettings(); render(); } }, 'Valeurs par défaut')),
-        app.player ? null : h('div', { class: 'card' }, h('h2', null, 'Sauvegardes'),
-          h('p', { class: 'muted' }, 'Tes persos et stages sont gardés dans ce navigateur / ce logiciel. Exporte-les pour les partager ou les sauvegarder.'),
-          h('button', { class: 'btn', onclick: () => download('platfight-bibliotheque.json', JSON.stringify({ format: 'platfight-library', fighters: app.fighters.filter((f) => !f.builtin), stages: app.stages.filter((s) => !s.builtin) })) }, 'Exporter toute la bibliothèque'),
+        !app.project ? null : h('div', { class: 'card' }, h('h2', null, 'Sauvegardes'),
+          h('p', { class: 'muted' }, 'Exporte les persos et stages de ce projet dans un seul fichier, pour les partager ou les ajouter à un autre projet.'),
+          h('button', { class: 'btn', onclick: () => download('platfight-bibliotheque.json', JSON.stringify({ format: 'platfight-library', fighters: app.fighters.filter((f) => !f.builtin), stages: app.stages.filter((s) => !s.builtin) })) }, 'Exporter tout le projet (.json)'),
           h('button', { class: 'btn', onclick: () => importFiles(render) }, 'Importer des fichiers PlatFight (.json)'))));
   };
   const el = h('div', { class: 'screen panel-screen' },
-    h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Options')),
+    h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Options')),
     body);
   return {
     el,

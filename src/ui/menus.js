@@ -94,7 +94,7 @@ function defaultPlayers() {
 function noFighters(title) {
   return {
     el: h('div', { class: 'screen panel-screen' },
-      h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, title)),
+      h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, title)),
       h('div', { class: 'card narrow' },
         h('h2', null, 'Aucun perso pour l\'instant'),
         h('p', null, 'Importe un perso Mugen / JUS (dossier, fichiers ou .zip) ou un fichier PlatFight pour commencer.'),
@@ -258,7 +258,7 @@ screens.versus = () => {
 
   const el = h('div', { class: 'screen versus' },
     h('header', { class: 'bar' },
-      h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'),
+      h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'),
       h('h1', null, 'Combat'),
       h('button', { class: 'btn primary big go', onclick: start }, 'C\'EST PARTI !')),
     h('div', { class: 'vs-body' },
@@ -305,7 +305,7 @@ screens.training = (preset = {}) => {
     launchTraining({ fighterId: st.fighterId, stageId: st.stageId, cpu: st.cpu, src: st.src, oppId: st.oppId, back: () => go('training', st) });
   };
   const el = h('div', { class: 'screen panel-screen' },
-    h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Entraînement')),
+    h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Entraînement')),
     h('div', { class: 'card narrow' }, h('p', { class: 'muted' }, 'Pourcentages remis à zéro avec R, hitbox avec H, vies infinies.'), body));
   return { el, enter: render };
 };

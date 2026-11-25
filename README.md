@@ -11,6 +11,26 @@ F11 passe en plein écran dans la version .exe.
 
 **Manette** : elle marche partout. Dans les menus : stick ou croix pour bouger, bouton bas pour valider, bouton droit pour revenir. Sur l'écran Combat, chaque manette rejoint la partie au premier appui et Start lance le combat. En jeu, Start met en pause (puis B pour quitter). Les boutons se règlent dans Options → Manettes.
 
+## Projets (comme Pokémon Studio)
+
+Au lancement, l'accueil liste tes **projets récents**. Un projet = un jeu.
+
+- **Nouveau projet** : tu donnes un nom, puis tu choisis où créer son dossier. Il contient :
+  - `projet.json` : le nom, le logo, l'écran titre, les règles et la physique du jeu ;
+  - `persos/` : un fichier `.pfchar.json` par perso ;
+  - `stages/` : un fichier `.pfstage.json` par stage (l'arène d'entraînement est ajoutée au départ).
+- **Ouvrir un projet** : choisis le dossier qui contient `projet.json`.
+- Dans le navigateur, les projets sont rangés dans le navigateur au lieu d'un dossier.
+- Si tu avais des persos dans l'ancienne version, l'accueil propose de les mettre dans un nouveau projet.
+
+Une fois le projet ouvert, la barre de gauche donne accès à **Accueil** (tableau de bord avec une liste « À faire »), **Persos**, **Stages**, **Jeu** (réglages, physique, export), **Importer** et **Options**.
+
+## Tester le jeu
+
+Le bouton **Tester** en bas de la barre (ou **F5**, depuis n'importe quel écran) lance ton jeu dans **sa propre fenêtre**, exactement comme les joueurs le verront. L'éditeur reste ouvert à côté : modifie, enregistre, puis appuie de nouveau sur F5 pour relancer le test dans la même fenêtre. « Quitter » ferme seulement la fenêtre de test.
+
+Dans les éditeurs, « Essayer ce perso » / « Essayer ce stage » lancent un entraînement rapide sans enregistrer.
+
 ## Importer des persos Mugen / JUS
 
 Menu **Importer**, puis dépose un dossier de perso, plusieurs dossiers ou un `.zip`.
@@ -59,22 +79,24 @@ Sols pleins (avec rebords), plateformes traversables, points de départ des 4 jo
 
 Pour un stage Mugen importé, le sol est posé par défaut de -200 à 200 : ajuste-le pour qu'il colle au dessin du décor.
 
-## Créer mon jeu (exporter ton propre jeu)
+## Exporter ton jeu
 
-Menu **Créer mon jeu** :
+Page **Jeu** du projet :
 
 - le nom, le sous-titre, l'auteur, la version et la couleur principale du jeu ;
 - un logo (PNG transparent conseillé ; sinon le nom est écrit en grand) ;
 - l'écran titre : un combat de démonstration entre CPU sur le stage de ton choix, ou une image ;
-- les persos et les stages à inclure, les règles par défaut, et si le mode entraînement est accessible.
+- les règles par défaut, si le mode entraînement est accessible, et la physique du jeu.
 
-**▶ Essayer** montre le jeu tel que les joueurs le verront, sans rien créer.
+Tous les persos et stages du projet sont dans le jeu.
+
+**Aperçu de l'écran titre** montre l'écran titre sans rien créer.
 **Exporter le jeu** :
 
 - depuis `PlatFight Studio.exe` : tu choisis un dossier, et il y crée un dossier au nom du jeu contenant `Nom du jeu.exe`. Ce .exe lance directement ton jeu, sans les éditeurs. Pour le partager, zippe et envoie **tout le dossier**. Chaque jeu garde ses réglages dans son propre dossier (`%APPDATA%\Nom du jeu`) ;
 - depuis le navigateur : il télécharge une page `Nom du jeu.html` autonome qui s'ouvre dans Chrome ou Edge.
 
-La physique (éjection, vitesse…) du jeu exporté est celle réglée dans Options au moment de l'export ; les joueurs peuvent changer leurs touches, leurs manettes et le son, mais pas la physique.
+La physique (éjection, vitesse…) se règle dans la page Jeu ; les joueurs peuvent changer leurs touches, leurs manettes et le son, mais pas la physique.
 
 Le .exe d'un jeu exporté garde l'icône de PlatFight Studio.
 
@@ -82,7 +104,7 @@ Le .exe d'un jeu exporté garde l'icône de PlatFight Studio.
 
 - `.pfchar.json` : un perso PlatFight (sprites, anims, coups, stats, couleurs).
 - `.pfstage.json` : un stage PlatFight.
-- Options → **Exporter toute la bibliothèque** sauvegarde tout en un seul fichier.
+- Options → **Exporter tout le projet** regroupe les persos et stages du projet dans un seul fichier.
 
 Le dossier `PlatFight-contenu-MYTHOS/contenu` contient les 4 persos MYTHOS et le stage SSB64 déjà convertis : Importer → choisis ces fichiers `.json`.
 
@@ -104,7 +126,7 @@ Le code du jeu est dans `src/` :
 
 - `import/` : lecture des formats Mugen (sff, air, def, cmd, act) et des zip.
 - `engine/` : moteur (personnage, chopes, stage, match, IA, entrées, sons).
-- `ui/` : écrans (menus, combat, import, éditeurs, Créer mon jeu).
+- `ui/` : écrans (accueil des projets, barre latérale, tableau de bord, combat, import, éditeurs, page Jeu).
 - `data/` : formats, bibliothèque, jeux exportés, contenu intégré.
 
 `node build.mjs` assemble le jeu dans `dist/index.html` (version web) et `builder/index.html` (version Windows). Ne modifie pas ces deux fichiers à la main.

@@ -122,7 +122,7 @@ screens.importer = () => {
   }
 
   const el = h('div', { class: 'screen panel-screen' },
-    h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Importer')),
+    h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Importer')),
     h('div', { class: 'imp-grid' }, drop, log),
     results);
   return { el };

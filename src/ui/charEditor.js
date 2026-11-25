@@ -81,7 +81,7 @@ screens.chareditor = (id, keep) => {
         h('button', { class: 'btn ghost', title: 'Annuler (Ctrl+Z)', onclick: undo }, '↶'),
         h('button', { class: 'btn ghost', title: 'Rétablir (Ctrl+Y)', onclick: redo }, '↷'),
         stageSel,
-        h('button', { class: 'btn', onclick: test }, '▶ Tester'),
+        h('button', { class: 'btn', title: 'Entraînement rapide avec ce perso, sans enregistrer', onclick: test }, '▶ Essayer ce perso'),
         h('button', { class: 'btn primary', onclick: save }, 'Enregistrer'))),
     h('div', { class: 'ed-body' }, left, center, right));
 
@@ -735,5 +735,6 @@ screens.chareditor = (id, keep) => {
       raf = requestAnimationFrame(loop);
     },
     leave() { alive = false; cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener('keydown', onKey); },
+    dirty: () => E.dirty,
   };
 };
