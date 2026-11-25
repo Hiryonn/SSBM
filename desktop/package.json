@@ -1,7 +1,7 @@
 {
   "name": "platfight-studio",
   "productName": "PlatFight Studio",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Créateur de jeux de combat façon Smash, compatible persos Mugen / JUS",
   "main": "main.js",
   "scripts": {
@@ -15,6 +15,7 @@
     "productName": "PlatFight Studio",
     "files": [
       "main.js",
+      "preload.js",
       "index.html"
     ],
     "directories": {

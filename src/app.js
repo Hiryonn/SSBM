@@ -22,7 +22,43 @@ export const app = {
   },
   root: null,
   screen: null,
+  player: null,   // jeu exporté en cours (mode joueur), sinon null
+  preview: null,  // aperçu d'un jeu depuis le logiciel : { restore }
 };
+
+const settingsKey = () => (app.player ? 'game:' + app.player.id : 'main');
+
+// Passe en mode joueur : seuls les persos / stages du jeu sont disponibles.
+export function enterPlayer(game) {
+  app.player = game;
+  app.fighters = game.fighters.slice();
+  app.stages = game.stages.slice();
+  document.title = game.name;
+  document.documentElement.style.setProperty('--red', game.color || '#ff3d48');
+  applySettings();
+}
+
+// Aperçu d'un jeu depuis le logiciel, puis retour à la bibliothèque.
+export function startPreview(game) {
+  app.preview = { fighters: app.fighters, stages: app.stages, title: document.title };
+  enterPlayer(game);
+}
+export function endPreview() {
+  if (!app.preview) return;
+  const p = app.preview;
+  app.preview = null; app.player = null;
+  app.fighters = p.fighters; app.stages = p.stages;
+  document.title = p.title;
+  document.documentElement.style.removeProperty('--red');
+  applySettings();
+}
+
+export async function loadPlayerSettings() {
+  const st = await store.get('settings', settingsKey());
+  if (st) Object.assign(app.settings, st, { keymaps: st.keymaps || app.settings.keymaps, padMap: st.padMap || app.settings.padMap });
+  if (app.player?.rules && !st) app.settings.rules = { ...app.settings.rules, ...app.player.rules };
+  applySettings();
+}
 
 export async function loadLibrary() {
   const training = buildTrainingStage();
@@ -36,11 +72,12 @@ export async function loadLibrary() {
 }
 
 export function applySettings() {
-  setConstants(app.settings.constants);
+  // Dans un jeu exporté, la physique est celle choisie par le créateur du jeu.
+  setConstants(app.player ? { ...app.settings.constants, ...app.player.constants, gameSpeed: app.player.constants?.gameSpeed ?? 1 } : app.settings.constants);
   volume.sfx = app.settings.volume.sfx;
   volume.music = app.settings.volume.music;
 }
-export async function saveSettings() { await store.put('settings', 'main', JSON.parse(JSON.stringify(app.settings))); }
+export async function saveSettings() { if (app.preview) return; await store.put('settings', settingsKey(), JSON.parse(JSON.stringify(app.settings))); }
 
 export async function saveFighter(def) {
   if (def.builtin) { def = { ...def, builtin: false, id: def.id + '-' + Date.now().toString(36), name: def.name + ' (copie)' }; }

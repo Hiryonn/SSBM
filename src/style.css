@@ -69,7 +69,7 @@ body.pad-mode .char-card:focus { border-color: var(--yellow); }
 .attract { position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(1.1) brightness(.55); }
 .title-wrap { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; justify-content: center; padding: clamp(20px, 5vw, 72px); max-width: 720px; background: linear-gradient(90deg, rgba(14,16,48,.92) 55%, rgba(14,16,48,0)); overflow-y: auto; }
 .logo { display: flex; flex-direction: column; line-height: .86; transform: skewX(-8deg); margin-bottom: 14px; }
-.logo .l1 { font: 400 clamp(56px, 9vw, 112px) var(--display); color: #fff; text-shadow: 6px 6px 0 var(--red); letter-spacing: .01em; }
+.logo .l1 { overflow-wrap: anywhere; font: 400 clamp(56px, 9vw, 112px) var(--display); color: #fff; text-shadow: 6px 6px 0 var(--red); letter-spacing: .01em; }
 .logo .l2 { font: 400 clamp(26px, 4vw, 46px) var(--display); color: var(--yellow); letter-spacing: .32em; margin-left: 6px; }
 .tagline { font-size: 17px; color: #d6d9ff; max-width: 46ch; margin: 0 0 22px; }
 .menu { display: flex; flex-direction: column; gap: 8px; max-width: 460px; }
@@ -257,3 +257,23 @@ ul.help { padding-left: 18px; color: var(--mute); font-size: 14px; }
   .title-wrap { background: rgba(14,16,48,.88); max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Créer mon jeu */
+.exp-status { margin: 12px 24px 0; padding: 10px 14px; background: var(--bg2); border-left: 4px solid var(--yellow); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.exp-size { color: var(--mute); font-size: 13px; }
+.exp-body { padding: 16px 24px 32px; display: flex; flex-direction: column; gap: 16px; }
+.exp-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--yellow); margin: 14px 0 6px; }
+.exp-logo { display: block; max-width: 100%; max-height: 140px; background: repeating-conic-gradient(#20265e 0 25%, #181d4c 0 50%) 0 0 / 16px 16px; border-radius: 8px; padding: 8px; }
+.exp-logo.empty { color: var(--mute); font-size: 13px; padding: 18px; text-align: center; }
+.exp-title-img { display: block; width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 6px; }
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.exp-grid.stages { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.exp-pick { background: #0c0f2a; border: 2px solid var(--line); border-radius: 8px; padding: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; opacity: .55; min-height: 44px; }
+.exp-pick canvas { width: 100%; height: auto; image-rendering: pixelated; }
+.exp-pick.on { opacity: 1; border-color: var(--yellow); box-shadow: 0 0 0 2px var(--yellow); }
+
+/* Écran titre d'un jeu exporté */
+.title.has-image { background-size: cover; background-position: center; }
+.game-logo { display: block; max-width: min(100%, 560px); max-height: 260px; object-fit: contain; margin-bottom: 14px; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); }
+.preview-banner { position: absolute; top: 12px; right: 12px; z-index: 2; display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,.7); padding: 8px 12px; border-radius: 8px; border: 2px solid var(--yellow); font-weight: 700; }

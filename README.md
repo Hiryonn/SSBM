@@ -59,6 +59,25 @@ Sols pleins (avec rebords), plateformes traversables, points de départ des 4 jo
 
 Pour un stage Mugen importé, le sol est posé par défaut de -200 à 200 : ajuste-le pour qu'il colle au dessin du décor.
 
+## Créer mon jeu (exporter ton propre jeu)
+
+Menu **Créer mon jeu** :
+
+- le nom, le sous-titre, l'auteur, la version et la couleur principale du jeu ;
+- un logo (PNG transparent conseillé ; sinon le nom est écrit en grand) ;
+- l'écran titre : un combat de démonstration entre CPU sur le stage de ton choix, ou une image ;
+- les persos et les stages à inclure, les règles par défaut, et si le mode entraînement est accessible.
+
+**▶ Essayer** montre le jeu tel que les joueurs le verront, sans rien créer.
+**Exporter le jeu** :
+
+- depuis `PlatFight Studio.exe` : tu choisis un dossier, et il y crée un dossier au nom du jeu contenant `Nom du jeu.exe`. Ce .exe lance directement ton jeu, sans les éditeurs. Pour le partager, zippe et envoie **tout le dossier**. Chaque jeu garde ses réglages dans son propre dossier (`%APPDATA%\Nom du jeu`) ;
+- depuis le navigateur : il télécharge une page `Nom du jeu.html` autonome qui s'ouvre dans Chrome ou Edge.
+
+La physique (éjection, vitesse…) du jeu exporté est celle réglée dans Options au moment de l'export ; les joueurs peuvent changer leurs touches, leurs manettes et le son, mais pas la physique.
+
+Le .exe d'un jeu exporté garde l'icône de PlatFight Studio.
+
 ## Fichiers
 
 - `.pfchar.json` : un perso PlatFight (sprites, anims, coups, stats, couleurs).
