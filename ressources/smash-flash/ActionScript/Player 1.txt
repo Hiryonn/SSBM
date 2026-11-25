@@ -1,0 +1,11 @@
+onClipEvent (load) {
+	player1character = _parent._parent.player1character;
+	player = 1;
+	_parent.player1.attachMovie(player1character, "player1", 10);
+}
+onClipEvent (enterFrame) {
+	tempx = Math.sqrt(Math.pow(this._x-275, 2));
+	if (tempx>50) {
+		this._x = 275.0;
+	}
+}

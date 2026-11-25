@@ -1,6 +1,7 @@
 // État global de l'application : bibliothèque, réglages, écrans.
 import * as store from './data/storage.js';
 import { buildTrainingStage } from './data/builtin.js';
+import { newMeta, uid } from './data/project.js';
 import { SpriteBank, drawFrame } from './engine/sprites.js';
 import { Stage } from './engine/stage.js';
 import { DEFAULT_KEYS, DEFAULT_PAD } from './engine/input.js';
@@ -22,53 +23,171 @@ export const app = {
   },
   root: null,
   screen: null,
+  project: null,  // projet ouvert : { backend, meta }
+  current: null,  // nom de l'écran affiché
+  player: null,   // jeu exporté en cours (mode joueur), sinon null
+  preview: null,  // aperçu d'un jeu depuis le logiciel : { restore }
 };
 
-export async function loadLibrary() {
-  const training = buildTrainingStage();
-  const fs = await store.all('fighters');
-  const ss = await store.all('stages');
-  app.fighters = [...fs.filter((f) => f && f.format === 'platfight-fighter').sort((a, b) => (a.name || '').localeCompare(b.name || ''))];
-  app.stages = [training, ...ss.filter((s) => s && s.format === 'platfight-stage').sort((a, b) => (a.name || '').localeCompare(b.name || ''))];
-  const st = await store.get('settings', 'main');
-  if (st) Object.assign(app.settings, st, { keymaps: st.keymaps || app.settings.keymaps, padMap: st.padMap || app.settings.padMap });
+const settingsKey = () => (app.player ? 'game:' + app.player.id : 'main');
+
+// Passe en mode joueur : seuls les persos / stages du jeu sont disponibles.
+export function enterPlayer(game) {
+  app.player = game;
+  app.fighters = game.fighters.slice();
+  app.stages = game.stages.slice();
+  document.title = game.name;
+  document.documentElement.style.setProperty('--red', game.color || '#ff3d48');
   applySettings();
 }
 
+// Aperçu d'un jeu depuis le logiciel, puis retour à la bibliothèque.
+export function startPreview(game) {
+  app.preview = { fighters: app.fighters, stages: app.stages, title: document.title };
+  enterPlayer(game);
+}
+export function endPreview() {
+  if (!app.preview) return;
+  const p = app.preview;
+  app.preview = null; app.player = null;
+  app.fighters = p.fighters; app.stages = p.stages;
+  document.title = p.title;
+  document.documentElement.style.removeProperty('--red');
+  applySettings();
+}
+
+export async function loadPlayerSettings() {
+  const st = await store.get('settings', settingsKey());
+  if (st) Object.assign(app.settings, st, { keymaps: st.keymaps || app.settings.keymaps, padMap: st.padMap || app.settings.padMap });
+  if (app.player?.rules && !st) app.settings.rules = { ...app.settings.rules, ...app.player.rules };
+  migrateSettings();
+  applySettings();
+}
+
+// Démarrage du logiciel : réglages seulement, les persos viennent du projet ouvert
+export async function loadStudio() {
+  const st = await store.get('settings', 'main');
+  if (st) Object.assign(app.settings, st, { keymaps: st.keymaps || app.settings.keymaps, padMap: st.padMap || app.settings.padMap });
+  if (!app.settings.recent) app.settings.recent = [];
+  migrateSettings();
+  applySettings();
+}
+
+// Ancienne bibliothèque (versions sans projets), pour la convertir en projet
+export async function loadLegacy() {
+  const fs = (await store.all('fighters')).filter((f) => f && f.format === 'platfight-fighter');
+  const ss = (await store.all('stages')).filter((x) => x && x.format === 'platfight-stage');
+  return { fighters: fs, stages: ss };
+}
+
+// ----------------------------------------------------------- projets
+const byOrder = (list, order) => {
+  const pos = new Map((order || []).map((id, k) => [id, k]));
+  return [...list].sort((a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9) || (a.name || '').localeCompare(b.name || ''));
+};
+
+export async function openProject(backend) {
+  const { meta, fighters, stages } = await backend.load();
+  if (!meta || meta.format !== 'platfight-project') throw new Error('Ce dossier ne contient pas de projet PlatFight (projet.json).');
+  meta.order = meta.order || { fighters: [], stages: [] };
+  meta.constants = { ...K, ...(meta.constants || {}) };
+  app.project = { backend, meta };
+  app.fighters = byOrder(fighters, meta.order.fighters);
+  app.stages = byOrder(stages, meta.order.stages);
+  bankCache.clear(); thumbCache.clear();
+  document.title = meta.name + ' — PlatFight Studio';
+  applySettings();
+  // Projets récents
+  const r = { kind: backend.kind, dir: backend.dir, id: backend.id, name: meta.name, where: backend.where, t: Date.now() };
+  app.settings.recent = [r, ...(app.settings.recent || []).filter((x) => (x.kind === 'disk' ? 'disk:' + x.dir : 'local:' + x.id) !== backend.key)].slice(0, 12);
+  await saveSettings();
+}
+
+export function closeProject() {
+  app.project = null;
+  app.fighters = []; app.stages = [];
+  bankCache.clear(); thumbCache.clear();
+  document.title = 'PlatFight Studio';
+  applySettings();
+}
+
+// Crée un projet vide (avec l'arène d'entraînement) ou à partir de persos / stages existants
+export async function createProject(backend, name, { fighters = [], stages = [], extra = {} } = {}) {
+  const meta = newMeta(name, extra);
+  if (backend.kind === 'local') meta.id = backend.id;
+  const arena = { ...buildTrainingStage(), id: 'arene', builtin: false, source: 'PlatFight Studio' };
+  const allStages = [arena, ...stages];
+  meta.order = { fighters: fighters.map((f) => f.id), stages: allStages.map((x) => x.id) };
+  await backend.saveMeta(meta);
+  for (const f of fighters) await backend.saveItem('fighters', { ...f, builtin: false });
+  for (const x of allStages) await backend.saveItem('stages', { ...x, builtin: false });
+  return meta;
+}
+
+export async function saveProjectMeta() {
+  if (!app.project) return;
+  app.project.meta.order = { fighters: app.fighters.map((f) => f.id), stages: app.stages.map((x) => x.id) };
+  app.project.meta.updated = Date.now();
+  await app.project.backend.saveMeta(app.project.meta);
+  document.title = app.project.meta.name + ' — PlatFight Studio';
+}
+
+// Mise à niveau des réglages enregistrés par une ancienne version
+function migrateSettings() {
+  const S = app.settings;
+  if (!S.constants) S.constants = { ...K };
+  if (S.constants.physVer !== 2) Object.assign(S.constants, { launch: 0.048, decay: 0.08, ssfAirdodge: true, physVer: 2 });
+  (S.keymaps || []).forEach((k, i) => { if (k && !k.grab && DEFAULT_KEYS[i]) k.grab = [...DEFAULT_KEYS[i].grab]; });
+  if (S.padMap && !S.padMap.grab) {
+    S.padMap.grab = [5];
+    S.padMap.shield = (S.padMap.shield || []).filter((n) => n !== 5);
+  }
+}
+
 export function applySettings() {
-  setConstants(app.settings.constants);
+  // La physique est celle du jeu (jeu exporté) ou du projet ouvert.
+  const src = app.player ? app.player.constants : app.project ? app.project.meta.constants : null;
+  setConstants(src ? { ...app.settings.constants, ...src, gameSpeed: src.gameSpeed ?? 1 } : app.settings.constants);
   volume.sfx = app.settings.volume.sfx;
   volume.music = app.settings.volume.music;
 }
-export async function saveSettings() { await store.put('settings', 'main', JSON.parse(JSON.stringify(app.settings))); }
+export async function saveSettings() { if (app.preview) return; await store.put('settings', settingsKey(), JSON.parse(JSON.stringify(app.settings))); }
+
+const copyOf = (def, p) => ({ ...def, builtin: false, id: uid(p), name: def.name + ' (copie)' });
 
 export async function saveFighter(def) {
-  if (def.builtin) { def = { ...def, builtin: false, id: def.id + '-' + Date.now().toString(36), name: def.name + ' (copie)' }; }
+  if (def.builtin) def = copyOf(def, 'f');
   def.updated = Date.now();
-  await store.put('fighters', def.id, def);
   const k = app.fighters.findIndex((f) => f.id === def.id);
-  if (k >= 0) app.fighters[k] = def; else app.fighters.push(def);
+  if (app.project) await app.project.backend.saveItem('fighters', def);
+  else await store.put('fighters', def.id, def);
+  if (k >= 0) app.fighters[k] = def; else { app.fighters.push(def); await saveProjectMeta(); }
   bankCache.delete(def.id);
   return def;
 }
 export async function deleteFighter(id) {
-  await store.del('fighters', id);
+  if (app.project) await app.project.backend.deleteItem('fighters', id);
+  else await store.del('fighters', id);
   app.fighters = app.fighters.filter((f) => f.id !== id);
   bankCache.delete(id);
+  await saveProjectMeta();
 }
 export async function saveStage(def) {
-  if (def.builtin) { def = { ...def, builtin: false, id: def.id + '-' + Date.now().toString(36), name: def.name + ' (copie)' }; }
+  if (def.builtin) def = copyOf(def, 's');
   def.updated = Date.now();
-  await store.put('stages', def.id, def);
   const k = app.stages.findIndex((f) => f.id === def.id);
-  if (k >= 0) app.stages[k] = def; else app.stages.push(def);
+  if (app.project) await app.project.backend.saveItem('stages', def);
+  else await store.put('stages', def.id, def);
+  if (k >= 0) app.stages[k] = def; else { app.stages.push(def); await saveProjectMeta(); }
   thumbCache.delete(def.id);
   return def;
 }
 export async function deleteStage(id) {
-  await store.del('stages', id);
+  if (app.project) await app.project.backend.deleteItem('stages', id);
+  else await store.del('stages', id);
   app.stages = app.stages.filter((f) => f.id !== id);
   thumbCache.delete(id);
+  await saveProjectMeta();
 }
 export const isPersistent = () => store.persistent;
 
@@ -126,20 +245,27 @@ export async function drawStageThumb(def, canvas) {
 }
 
 // ----------------------------------------------------------- écrans
+// La coque (barre latérale du projet) est fournie par ui/shell.js
+export const hooks = { wrap: null };
+
 export function show(screen) {
   if (app.screen && app.screen.leave) app.screen.leave();
   clear(app.root);
   app.screen = screen;
   document.body.dataset.ingame = screen.ingame ? '1' : '0';
-  app.root.append(screen.el);
+  const inShell = app.project && !app.player && !screen.ingame && !screen.noShell && hooks.wrap;
+  app.root.append(inShell ? hooks.wrap(screen.el, app.current) : screen.el);
   if (screen.enter) screen.enter();
   window.scrollTo(0, 0);
 }
 
 export const screens = {};
 export function go(name, ...args) {
+  // Dans le logiciel, l'« écran titre » est le tableau de bord du projet (ou l'accueil des projets)
+  if (name === 'title' && !app.player) name = app.project ? 'dashboard' : 'home';
   const make = screens[name];
   if (!make) throw new Error('Écran inconnu : ' + name);
+  app.current = name;
   const s = make(...args);
   if (s && typeof s.then === 'function') s.then(show); else show(s);
 }

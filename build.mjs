@@ -27,3 +27,9 @@ ${js}
 fs.mkdirSync('dist', { recursive: true });
 fs.writeFileSync('dist/index.html', html);
 console.log('dist/index.html', (html.length / 1024).toFixed(0) + ' Ko');
+// Copie pour l'application Windows (dossier builder/), avec un avertissement en tête
+if (fs.existsSync('builder')) {
+  const warn = '<!-- Fichier généré par build.mjs à partir de src/. Ne pas le modifier à la main : modifie src/ puis relance « node build.mjs ». -->\n';
+  fs.writeFileSync('builder/index.html', html.replace('<!DOCTYPE html>\n', '<!DOCTYPE html>\n' + warn));
+  console.log('builder/index.html mis à jour');
+}

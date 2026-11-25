@@ -1,0 +1,869 @@
+onClipEvent (load) {
+	exist = _parent._parent.player2.exist;
+	exist3 = _parent._parent.player3.exist;
+	exist4 = _parent._parent.player4.exist;
+	target = null;
+	if (exist) {
+		this.duplicateMovieClip("player2", 0);
+		_parent.player2.attachMovie(_parent.player2character);
+	} else if (!exist) {
+		this.removeMovieClip();
+	}
+	if (_parent.setgameto == "ffa") {
+		p1hurt = true;
+		p3hurt = true;
+		p4hurt = true;
+	} else if (_parent.setgameto == "2v21") {
+		p1hurt = false;
+		p3hurt = true;
+		p4hurt = true;
+	} else if (_parent.setgameto == "2v22") {
+		p1hurt = true;
+		p3hurt = true;
+		p4hurt = false;
+	} else if (_parent.setgameto == "1v31") {
+		p1hurt = true;
+		p3hurt = false;
+		p4hurt = false;
+	} else if (_parent.setgameto == "1v32") {
+		p1hurt = true;
+		p3hurt = true;
+		p4hurt = true;
+	} else if (_parent.setgameto == "1v33") {
+		p1hurt = false;
+		p3hurt = true;
+		p4hurt = false;
+	} else if (_parent.setgameto == "2v1v1") {
+		p1hurt = false;
+		p3hurt = true;
+		p4hurt = true;
+	} else if (_parent.setgameto == "1v1v2") {
+		p1hurt = true;
+		p3hurt = true;
+		p4hurt = true;
+	}
+	function getDistances() {
+		p1distance = Math.sqrt(Math.pow((this._x-_parent.player1._x)+(this._y-_parent.player1._y), 2));
+		p3distance = Math.sqrt(Math.pow((this._x-_parent.player3._x)+(this._y-_parent.player3._y), 2));
+		p4distance = Math.sqrt(Math.pow((this._x-_parent.player4._x)+(this._y-_parent.player4._y), 2));
+	}
+	function attackwho() {
+		if (_parent.setgameto == "ffa") {
+			if (p1distance<p3distance and p1distance<p4distance and _parent.player1.dead == false) {
+				target = "player1";
+			} else if (exist3 and p3distance<p1distance and p3distance<p4distance and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and p4distance<p1distance and p4distance<p3distance and _parent.player4.dead == false) {
+				target = "player4";
+			} else if (_parent.player1.dead == false) {
+				target = "player1";
+			} else if (_parent.player3.dead == false and exist3) {
+				target = "player3";
+			} else if (_parent.player4.dead == false and exist4) {
+				target = "player4";
+			}
+		} else if (_parent.setgameto == "2v21") {
+			if (exist3 and p3distance<p4distance and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and p4distance<p3distance and _parent.player4.dead == false) {
+				target = "player4";
+			} else if (exist3 and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and _parent.player4.dead == false) {
+				target = "player4";
+			}
+		} else if (_parent.setgameto == "2v22") {
+			if (exist3 and p3distance<p1distance and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (p1distance<p3distance and _parent.player1.dead == false) {
+				target = "player1";
+			} else if (exist3 and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (_parent.player1.dead == false) {
+				target = "player1";
+			}
+		} else if (_parent.setgameto == "1v31") {
+			target = "player1";
+		} else if (_parent.setgameto == "1v32") {
+			if (p1distance<p3distance and p1distance<p4distance and _parent.player1.dead == false) {
+				target = "player1";
+			} else if (exist3 and p3distance<p1distance and p3distance<p4distance and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and p4distance<p1distance and p4distance<p3distance and _parent.player4.dead == false) {
+				target = "player4";
+			} else if (_parent.player1.dead == false) {
+				target = "player1";
+			} else if (_parent.player3.dead == false and exist3) {
+				target = "player3";
+			} else if (_parent.player4.dead == false and exist4) {
+				target = "player4";
+			}
+		} else if (_parent.setgameto == "1v33") {
+			target = "player3";
+		} else if (_parent.setgameto == "2v1v1") {
+			if (exist3 and p3distance<p4distance and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and p4distance<p3distance and _parent.player4.dead == false) {
+				target = "player4";
+			} else if (exist3 and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and _parent.player4.dead == false) {
+				target = "player4";
+			}
+		} else if (_parent.setgameto == "1v1v2") {
+			if (p1distance<p3distance and p1distance<p4distance and _parent.player1.dead == false) {
+				target = "player1";
+			} else if (exist3 and p3distance<p1distance and p3distance<p4distance and _parent.player3.dead == false) {
+				target = "player3";
+			} else if (exist4 and p4distance<p1distance and p4distance<p3distance and _parent.player4.dead == false) {
+				target = "player4";
+			} else if (_parent.player1.dead == false) {
+				target = "player1";
+			} else if (_parent.player3.dead == false and exist3) {
+				target = "player3";
+			} else if (_parent.player4.dead == false and exist4) {
+				target = "player4";
+			}
+		}
+	}
+	tempspeed = 0;
+	speed = 0;
+	maxmove = _parent._parent.player2.maxmove;
+	maxjump = _parent._parent.player2.maxjump;
+	jumping = true;
+	jump = 10;
+	moving = false;
+	movingright = false;
+	movingleft = false;
+	falling = true;
+	onground = false;
+	jumpdamage = _parent._parent.player2.jumpdamage;
+	facing = "right";
+	attacking = false;
+	attackboost = _parent._parent.player2.attackboost;
+	attacklength = _parent._parent.player2.attacklength;
+	attackspace = _parent._parent.player2.attackspace;
+	vulnerable = false;
+	ducking = false;
+	control = false;
+	rev = false;
+	down = false;
+	rolling = false;
+	sounddelay = 0;
+	attackdelay = 0;
+	turnaround = _parent._parent.player2.turnaround;
+	hurt = false;
+	hurtdelay = 0;
+	recoveryrate = _parent._parent.player2.recoveryrate;
+	knockback = _parent._parent.knockback;
+	knockup = _parent._parent.knockup;
+	health = 0;
+	tempattack = 0;
+	chanceattack = _parent._parent.player2.chanceattack;
+	jumpchance = _parent._parent.player2.jumpchance;
+	attackrange = _parent._parent.player2.attackrange;
+	jumprange = _parent._parent.player2.jumprange;
+	damage = 0;
+	smash = _parent._parent.player2.smash;
+	normal = _parent._parent.player2.normal;
+	air = _parent._parent.player2.air;
+	revdamage = _parent._parent.player2.revdamage;
+	revspeed = _parent._parent.player2.revspeed;
+	healthdivision = _parent._parent.healthdivision;
+	revchance = _parent._parent.player2.revchance;
+	followchance = _parent._parent.player2.followchance;
+	cliff = false;
+	lives = _parent._parent.lives;
+	dead = false;
+	function getKey() {
+		if (Key.isDown(Key.UP)) {
+			up = true;
+		} else {
+			up = false;
+		}
+		if (Key.isDown(Key.DOWN)) {
+			down = true;
+		} else {
+			down = false;
+		}
+		if (Key.isDown(Key.LEFT)) {
+			left = true;
+		} else {
+			left = false;
+		}
+		if (Key.isDown(Key.RIGHT)) {
+			right = true;
+		} else {
+			right = false;
+		}
+		if (Key.isDown(Key.CONTROL)) {
+			control = true;
+		} else {
+			control = false;
+		}
+		if (Key.isDown(Key.SPACE)) {
+			space = true;
+		} else {
+			space = false;
+		}
+	}
+	function setalpha() {
+		tempalpha = _parent.player2._alpha;
+		if (tempalpha<100) {
+			_parent.player2._alpha += 2;
+		} else if (tempalpha>=100) {
+			fading = false;
+		}
+	}
+	function checkdeath() {
+		if (this._y>_parent.ground._y+400) {
+			death = "bottom";
+		} else if (this._y<_parent.ground._y-600) {
+			death = "air";
+		} else if (this._x<_parent.ground._x-600) {
+			death = "left";
+		} else if (this._x>_parent.ground._x+_parent.ground._width+600) {
+			death = "right";
+		} else {
+			death = "no";
+		}
+		if (death == "left" and !fading) {
+			_parent.blow.gotoAndPlay("left");
+			_parent.player2._alpha = 0;
+			tempmovex = Math.sqrt(Math.pow(this._x+(_parent.ground._x+_parent.ground._width/2), 2));
+			tempmovey = (_parent.ground._y-400)-this._y;
+			this._x += tempmovex;
+			this._y -= tempmovey;
+			jump = 0;
+			speed = 0;
+			fading = true;
+			lives -= 1;
+			health = 0;
+		} else if (death == "right" and !fading) {
+			_parent.blow.gotoAndPlay("right");
+			_parent.player2._alpha = 0;
+			tempmovex = Math.sqrt(Math.pow(this._x+(_parent.ground._x+_parent.ground._width/2), 2));
+			tempmovey = (_parent.ground._y-400)-this._y;
+			this._x -= tempmovex;
+			this._y -= tempmovey;
+			jump = 0;
+			speed = 0;
+			fading = true;
+			lives -= 1;
+			health = 0;
+		} else if (death == "air" and !fading) {
+			_parent.blow.gotoAndPlay("top");
+			_parent.player2._alpha = 0;
+			tempmovex = (_parent.ground._x+(_parent.ground._width/2))-this._x;
+			tempmovey = Math.sqrt(Math.pow(this._y+(_parent.ground._y-400), 2));
+			this._x += tempmovex;
+			this._y += tempmovey;
+			jump = 0;
+			speed = 0;
+			fading = true;
+			lives -= 1;
+			health = 0;
+		} else if (death == "bottom" and !fading) {
+			_parent.blow.gotoAndPlay("bottom");
+			_parent.player2._alpha = 0;
+			tempmovex = (_parent.ground._x+(_parent.ground._width/2))-this._x;
+			tempmovey = Math.sqrt(Math.pow(this._y+(_parent.ground._y-400), 2));
+			this._x += tempmovex;
+			this._y -= tempmovey;
+			jump = 0;
+			speed = 0;
+			fading = true;
+			lives -= 1;
+			health = 0;
+		}
+	}
+	function attack() {
+		gotoAndPlay("attack");
+	}
+	function running() {
+		this.gotoAndStop("running");
+	}
+	function ducka() {
+		this.gotoAndPlay("ducking");
+	}
+	function standing() {
+		this.gotoAndPlay("standing");
+	}
+	function jumpa() {
+		this.gotoAndPlay("jumping");
+	}
+	function fall() {
+		_parent.player2.gotoAndPlay("falling");
+	}
+	function attack2() {
+		_parent.player2.gotoAndPlay("attackforward");
+	}
+	function attackup() {
+		_parent.player2.gotoAndPlay("attackup");
+	}
+	function attackdown() {
+		_parent.player2.gotoAndPlay("attackdown");
+	}
+	function rolla() {
+		_parent.player2.gotoAndPlay("rolling");
+	}
+	function checkhurt() {
+		hurtdelay++;
+		if (hurtdelay>=recoveryrate and hurt) {
+			hurt = false;
+			if (!onground) {
+				jumpa();
+			} else if (onground and speed !== 0) {
+				running();
+			} else {
+				standing();
+			}
+		}
+	}
+	function checkhit() {
+		if (!fading) {
+			if (_parent.player2.hitTest(_parent.p1attackbox) and p1hurt) {
+				health += _parent.ground.damage;
+				health = Math.round(health);
+				hit();
+				lasthit = 1;
+			}
+			if (_parent.player2.hitTest(_parent.player1.attackbox) and p1hurt) {
+				health += _parent.ground.damage;
+				health = Math.round(health);
+				hit();
+				lasthit = 1;
+			}
+			if (_parent.player2.hitTest(_parent.player3.attackbox)  and p3hurt) {
+				health += _parent.player3.damage;
+				health = Math.round(health);
+				hit();
+				lasthit = 3;
+			}
+			if (_parent.player2.hitTest(_parent.player4.attackbox) and p4hurt) {
+				health += _parent.player4.damage;
+				health = Math.round(health);
+				hit();
+				lasthit = 4;
+			}
+			if (_parent.player2.hitTest(_parent.p3attackbox) and p3hurt) {
+				health += _parent.player3.damage;
+				health = Math.round(health);
+				hit();
+				lasthit = 3;
+			}
+			if (_parent.player2.hitTest(_parent.p4attackbox) and p4hurt) {
+				health += _parent.player4.damage;
+				health = Math.round(health);
+				hit();
+				lasthit = 4;
+			}
+		}
+	}
+	function hit() {
+		attacking = false;
+		vulnerable = false;
+		ducking = false;
+		control = false;
+		rev = false;
+		down = false;
+		rolling = false;
+		if (!hurt) {
+			hurtdelay = 0;
+			_parent.player2.gotoAndPlay("hurt");
+			_parent.player2.punch.start();
+			if (!onground) {
+				if (speed == 0) {
+					if (Math.random()>.5) {
+						speed = -2;
+					} else {
+						speed = 2;
+					}
+				} else if (speed>0) {
+					speed = 2;
+				} else if (speed<0) {
+					speed = -2;
+				}
+				jump = -1;
+				speed *= (health/healthdivision);
+				jump *= (health/healthdivision);
+				this._y += jump;
+			} else if (onground) {
+				if (speed == 0) {
+					if (Math.random()>.5) {
+						speed = -2;
+					} else {
+						speed = 2;
+					}
+				} else if (speed>0) {
+					speed = -2;
+				} else if (speed<0) {
+					speed = 2;
+				}
+				rev = false;
+				rolling = false;
+				ducking = false;
+				onground = false;
+				jumping = true;
+				jump = -1;
+				speed *= (health/healthdivision);
+				jump *= (health/healthdivision);
+				this._y += jump;
+			}
+		}
+		hurt = true;
+	}
+	function checkduck() {
+		tempattack2 = Math.random();
+		tempdistance2 = (Math.sqrt(Math.pow((this._x-_parent.player1._x), 2)+Math.pow(this._y-_parent.player1._y, 2)));
+		if (onground and !hurt and tempattack2<revchance and tempdistance>50 and tempdistance2<150 and !rolling) {
+			control = false;
+			down = true;
+			if (down and !ducking) {
+				ducking = true;
+				ducka();
+			}
+			rev = true;
+			if (rev and !control) {
+				if (!rolling) {
+					rolla();
+				}
+				damage = revdamage;
+				if (facing == "right") {
+					speed = revspeed;
+				} else if (facing == "left") {
+					speed = -revspeed;
+				}
+				rolling = true;
+				rev = false;
+				ducking = false;
+				_parent.player2.shoot.start();
+			}
+		}
+	}
+	function checkcliff() {
+		if (playerx<_parent.ground.groundx and !hurt and !onground) {
+			cliff = true;
+			if (attackdelay>12 and facing == "right" and !ducking and !rev and !rolling) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.aforward.start();
+				damage = smash;
+				attack2();
+				speed += attackboost;
+			}
+			if (!movingright and !jumping) {
+				if (facing !== "right") {
+					this._x = this._x-this._width;
+					this._xscale = Math.abs(this._xscale);
+				}
+				facing = "right";
+				if (speed<-10 and onground) {
+					speed += 8;
+					_parent.player2.turn.start();
+				}
+				running();
+			} else if (!movingright and jumping and !hurt) {
+				if (facing !== "right") {
+					this._x = this._x-this._width;
+					this._xscale = Math.abs(this._xscale);
+				}
+				facing = "right";
+			}
+			if (onground) {
+				running();
+			}
+			this._x += speed;
+			tempspeed = speed;
+			speed += .5;
+			movingright = true;
+			movingleft = false;
+		} else if (playerx>_parent.ground.groundx+_parent.ground._width and !onground) {
+			cliff = true;
+			if (attackdelay>12 and facing == "left" and !ducking and !rev and !rolling) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.aforward.start();
+				damage = smash;
+				attack2();
+				speed -= attackboost;
+			}
+			if (!movingleft and !jumping) {
+				if (facing !== "left") {
+					this._x = this._x+this._width;
+					this._xscale = -Math.abs(this._xscale);
+				}
+				if (speed>10 and onground) {
+					speed -= 8;
+					_parent.player2.turn.start();
+				}
+				facing = "left";
+				running();
+			} else if (!movingleft and jumping) {
+				if (facing !== "left") {
+					this._x = this._x+this._width;
+					this._xscale = -Math.abs(this._xscale);
+				}
+				facing = "left";
+			}
+			if (onground) {
+				running();
+			}
+			this._x += speed;
+			tempspeed = speed;
+			speed -= .5;
+			movingleft = true;
+			movingright = false;
+		} else if (Math.sqrt(Math.pow(playerx-_parent.ground.groundx, 2))<50 and !hurt and onground) {
+			cliff = true;
+			if (!movingright and !jumping) {
+				if (facing !== "right") {
+					this._x = this._x-this._width;
+					this._xscale = Math.abs(this._xscale);
+				}
+				facing = "right";
+				if (speed<-10 and onground) {
+					speed += 8;
+					_parent.player2.turn.start();
+				}
+				running();
+			} else if (!movingright and jumping and !hurt) {
+				if (facing !== "right") {
+					this._x = this._x-this._width;
+					this._xscale = Math.abs(this._xscale);
+				}
+				facing = "right";
+			}
+			if (onground) {
+				running();
+			}
+			this._x += speed;
+			tempspeed = speed;
+			speed += .5;
+			movingright = true;
+			movingleft = false;
+		} else if (Math.sqrt(Math.pow(playerx-_parent.ground.groundx+(_parent.ground._width), 2))<50 and onground and !hurt) {
+			if (!movingleft and !jumping) {
+				if (facing !== "left") {
+					this._x = this._x+this._width;
+					this._xscale = -Math.abs(this._xscale);
+				}
+				if (speed>10 and onground) {
+					speed -= 8;
+					_parent.player2.turn.start();
+				}
+				facing = "left";
+				running();
+			} else if (!movingleft and jumping) {
+				if (facing !== "left") {
+					this._x = this._x+this._width;
+					this._xscale = -Math.abs(this._xscale);
+				}
+				facing = "left";
+			}
+			if (onground) {
+				running();
+			}
+			this._x += speed;
+			tempspeed = speed;
+			speed -= .5;
+			movingleft = true;
+			movingright = false;
+			cliff = true;
+		} else {
+			cliff = false;
+		}
+	}
+	function checkattack() {
+		attackdelay++;
+		tempattack = Math.random();
+		tempdistance = (Math.sqrt(Math.pow((this._x-_parent.player1._x), 2)+Math.pow(this._y-_parent.player1._y, 2)));
+		if (!hurt and tempattack<=chanceattack) {
+			if (attackdelay>attackspace and !onground and !ducking and !rev and !rolling and Math.abs(_parent.player1._y-this._y)<20 and _parent.player1.jump>3 and this._y<_parent.player1._y) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.adown.start();
+				damage = air;
+				attackup();
+			} else if (attackdelay>attackspace and facing == "right" and !ducking and !rev and !rolling and _parent.player1._x>this._x and tempdistance<80 and tempdistance>20) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.aforward.start();
+				damage = smash;
+				attack2();
+			} else if (attackdelay>attackspace and facing == "left" and !ducking and !rev and !rolling and _parent.player1._x<this._x and tempdistance<20) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.aforward.start();
+				damage = smash;
+				attack2();
+			} else if (attackdelay>attackspace and !ducking and !rev and !rolling and Math.abs(_parent.player1._y-this._y)<20 and _parent.player1.jump<-1 and this._y>_parent.player1._y) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.aup.start();
+				damage = air;
+				attackdown();
+			} else if (attackdelay>attackspace and !ducking and !rev and !rolling and tempdistance<40 and tempdistance>20 and facing == "right" and this._x<_parent.player1._x) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.anormal.start();
+				damage = normal;
+				attack();
+			} else if (attackdelay>attackspace and !ducking and !rev and !rolling and tempdistance<40 and tempdistance>20 and facing == "left" and this._x>_parent.player1._x) {
+				vulnerable = false;
+				attacking = true;
+				attackdelay = 0;
+				_parent.player2.anormal.start();
+				damage = normal;
+				attack();
+			}
+			if (attacking) {
+				if (facing == "right" and speed<10) {
+					speed += attackboost;
+				} else if (facing == "left" and speed>-10) {
+					speed -= attackboost;
+				}
+			}
+			if (attackdelay>attacklength) {
+				vulnerable = true;
+				attacking = false;
+			}
+			if (!onground and attackdelay == attacklength) {
+				jumpa();
+			}
+			if (onground and attackdelay == attacklength) {
+				attacking = false;
+				standing();
+			}
+			if (onground and attackdelay>attacklength and attacking) {
+				attacking = false;
+				standing();
+			}
+			if (!onground and attackdelay>attacklength and attacking) {
+				attacking = false;
+			}
+		}
+	}
+	function goright() {
+		temprun = Math.random();
+		if (_parent.player1._x>this._x and speed<maxmove and (Math.sqrt(Math.pow((this._x-_parent.player1._x), 2)+Math.pow(this._y-_parent.player1._y, 2)))>attackrange and !hurt and !rolling and !cliff and temprun<followchance) {
+			if (!movingright and !jumping) {
+				if (facing !== "right") {
+					this._x = this._x-this._width;
+					this._xscale = Math.abs(this._xscale);
+				}
+				facing = "right";
+				if (speed<-10 and onground) {
+					speed += 8;
+					_parent.player2.turn.start();
+				}
+				running();
+			} else if (!movingright and jumping) {
+				if (facing !== "right") {
+					this._x = this._x-this._width;
+					this._xscale = Math.abs(this._xscale);
+				}
+				facing = "right";
+			}
+			if (onground) {
+				running();
+			}
+			this._x += speed;
+			tempspeed = speed;
+			speed += .5;
+			movingright = true;
+			movingleft = false;
+		} else {
+			movingright = false;
+		}
+	}
+	function goleft() {
+		temprun = Math.random();
+		if (_parent.player1._x<this._x and (Math.sqrt(Math.pow((this._x-_parent.player1._x), 2)+Math.pow(this._y-_parent.player1._y, 2)))>attackrange and speed>-maxmove and !hurt and !rolling and !cliff and temprun<followchance) {
+			if (!movingleft and !jumping) {
+				if (facing !== "left") {
+					this._x = this._x+this._width;
+					this._xscale = -Math.abs(this._xscale);
+				}
+				if (speed>10 and onground) {
+					speed -= 8;
+					_parent.player2.turn.start();
+				}
+				facing = "left";
+				running();
+			} else if (!movingleft and jumping) {
+				if (facing !== "left") {
+					this._x = this._x+this._width;
+					this._xscale = -Math.abs(this._xscale);
+				}
+				facing = "left";
+			}
+			if (onground) {
+				running();
+			}
+			this._x += speed;
+			tempspeed = speed;
+			speed -= .5;
+			movingleft = true;
+			movingright = false;
+		} else {
+			movingleft = false;
+		}
+	}
+	function player2slow() {
+		if (!movingright and !movingleft and speed>0) {
+			this._x += speed;
+			tempspeed = speed;
+			speed -= 1;
+		}
+		if (!movingright and !movingleft and speed<0) {
+			this._x += speed;
+			tempspeed = speed;
+			speed += 1;
+		}
+	}
+	function player2jump() {
+		if (_parent.player1._y<this._y-this._height-20 and onground and (Math.sqrt(Math.pow((this._x-_parent.player1._x))), 2)<jumprange and !hurt and Math.random()<jumpchance) {
+			if (onground) {
+				rev = false;
+				rolling = false;
+				ducking = false;
+				_parent.player2.jumpsound.start();
+				jumpa();
+			}
+			falling = false;
+			jumping = true;
+			jump = maxjump;
+			this._y += jump;
+			damage = jumpdamage;
+			onground = false;
+		} else if (jumping and !onground) {
+			this._y += jump;
+			jump++;
+		}
+		if (!falling and jump>=0) {
+			falling = true;
+			fall();
+		}
+	}
+	function checkground() {
+		if (_parent.ground.hitTest(_parent.player2.feet) and falling and this._y<_parent.ground._y) {
+			if (jumping) {
+				standing();
+			}
+			if (hurtdelay>=recoveryrate and hurt) {
+				hurt = false;
+			}
+			onground = true;
+			jumping = false;
+			jump = 0;
+			lasthit = 0;
+			//_parent.player2._y -= 172.9;
+		} else if (_parent.platform1.hitTest(_parent.player2.feet) and falling and _parent.player2._y+35<_parent.platform1._y) {
+			if (jumping and !hurt) {
+				standing();
+			}
+			if (hurtdelay>=recoveryrate and hurt) {
+				hurt = false;
+			}
+			onground = true;
+			jumping = false;
+			jump = 0;
+			lasthit = 0;
+		} else if (_parent.platform2.hitTest(_parent.player2.feet) and falling and _parent.player2._y+35<_parent.platform2._y) {
+			if (jumping and !hurt) {
+				standing();
+			}
+			if (hurtdelay>=recoveryrate and hurt) {
+				hurt = false;
+			}
+			onground = true;
+			jumping = false;
+			jump = 0;
+			lasthit = 0;
+		} else if (_parent.platform3.hitTest(_parent.player2.feet) and falling and _parent.player2._y+35<_parent.platform3._y) {
+			if (jumping and !hurt) {
+				standing();
+			}
+			if (hurtdelay>=recoveryrate and hurt) {
+				hurt = false;
+			}
+			onground = true;
+			jumping = false;
+			jump = 0;
+			lasthit = 0;
+		} else if (_parent.platform4.hitTest(_parent.player2.feet) and falling and _parent.player2._y+35<_parent.platform4._y) {
+			if (jumping and !hurt) {
+				standing();
+			}
+			if (hurtdelay>=recoveryrate and hurt) {
+				hurt = false;
+			}
+			onground = true;
+			jumping = false;
+			jump = 0;
+			lasthit = 0;
+		} else if (_parent.platform5.hitTest(_parent.player2.feet) and falling and _parent.player2._y+35<_parent.platform5._y) {
+			if (jumping and !hurt) {
+				standing();
+			}
+			if (hurtdelay>=recoveryrate and hurt) {
+				hurt = false;
+			}
+			onground = true;
+			jumping = false;
+			jump = 0;
+			lasthit = 0;
+		} else if (!_parent.ground.hitTest(_parent.player2.feet) and !_parent.platform1.hitTest(_parent.player2.feet) and !_parent.platform1.hitTest(_parent.player2.feet) and !_parent.platform2.hitTest(_parent.player2.feet) and !_parent.platform3.hitTest(_parent.player2.feet) and !_parent.platform4.hitTest(_parent.player2.feet) and !_parent.platform5.hitTest(_parent.player2.feet)) {
+			onground = false;
+			jumping = true;
+		}
+	}
+	function checkspeed() {
+		if (speed>-1 and speed<1 and !movingleft and !movingright) {
+			rolling = false;
+			speed = 0;
+		}
+	}
+	function checkifmoving() {
+		if (speed == 0 and !jumping and !movingright and !movingleft) {
+			standing();
+			moving = false;
+		}
+	}
+	function checkspeed() {
+		if (speed>-1 and speed<1 and !movingleft and !movingright and !rolling) {
+			speed = 0;
+		}
+		if (rolling and speed>-1 and speed<1) {
+			rolling = false;
+			speed = 0;
+		}
+	}
+}
+onClipEvent (enterFrame) {
+	getDistances();
+	attackwho();
+	checkdeath();
+	setalpha();
+	playerx = this._x;
+	checkcliff();
+	checkhurt();
+	checkhit();
+	checkattack();
+	checkduck();
+	checkground();
+	checkifmoving();
+	player2jump();
+	goright();
+	goleft();
+	player2slow();
+	checkspeed();
+}

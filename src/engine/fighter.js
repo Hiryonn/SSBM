@@ -2,9 +2,14 @@
 import { AnimPlayer, drawFrame } from './sprites.js';
 import { K, knockback } from './constants.js';
 import { MOVE_INFO } from '../data/defs.js';
+import { BUTTONS } from './input.js';
+
+const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+// Si un perso n'a pas d'anim de chope, on réutilise celle d'une attaque
+const GRAB_FALLBACK = { grab: 'jab', pummel: 'jab', fthrow: 'ftilt', bthrow: 'ftilt', uthrow: 'utilt', dthrow: 'dtilt' };
 
 const AIR_STATES = new Set(['air', 'helpless', 'airdodge', 'tumble']);
-const STOP_AT_EDGE = new Set(['attack', 'shield', 'land', 'roll', 'dodge', 'lie', 'getup', 'shieldstun', 'dizzy', 'climb', 'jumpsquat']);
+const STOP_AT_EDGE = new Set(['holding', 'attack', 'shield', 'land', 'roll', 'dodge', 'lie', 'getup', 'shieldstun', 'dizzy', 'climb', 'jumpsquat']);
 
 export class Fighter {
   constructor(def, bank, opts = {}) {
@@ -39,6 +44,9 @@ export class Fighter {
     this.projDone = new Set(); this.impulseDone = false;
     this.lastHit = null; this.dead = false; this.flash = 0; this.techWindow = 0;
     this.attackFlip = false;
+    this.holding = null;    // adversaire tenu (chope)
+    this.grabbedBy = null;  // qui nous tient
+    this.ledgeInv = true;   // invincibilité au rebord : une fois par saut
     this.setState('air', 'fall');
   }
 
@@ -84,6 +92,8 @@ export class Fighter {
   // ------------------------------------------------------------------ actions au sol
   groundActions(match, c, fromRun = false) {
     if (c.pressed.jump) { c.consume('jump'); this.setState('jumpsquat', 'jumpSquat'); return true; }
+    // Chope : bouton dédié, ou bouclier + attaque
+    if ((c.pressed.grab || (c.held.shield && c.pressed.attack)) && this.startGrab(match)) { c.consume('grab', 'attack', 'shield'); return true; }
     if (c.held.shield && this.state !== 'shield') { c.consume('shield'); this.setState('shield', 'shield'); return true; }
     if (this.groundAttack(match, c, fromRun)) { c.consume('attack', 'special', 'smash'); return true; }
     if (K.tapJump && c.yFlick <= 1 && c.up) { this.setState('jumpsquat', 'jumpSquat'); return true; }
@@ -162,7 +172,12 @@ export class Fighter {
       c.consume('shield');
       this.airdodgeUsed = true;
       const len = Math.hypot(c.x, c.y);
-      if (len > 0.4) { this.vx = (c.x / len) * 4.2; this.vy = (c.y / len) * 4.2; this.adDir = true; }
+      if (K.ssfAirdodge) {
+        // Façon Smash Flash : petite poussée, on garde le contrôle en l'air
+        this.adDir = false;
+        if (len > 0.4) { this.vx = this.vx * 0.5 + (c.x / len) * 1.6; this.vy = Math.min(this.vy, 0) * 0.3 + (c.y / len) * 1.6; }
+        else { this.vx *= 0.6; this.vy = Math.min(this.vy, 1); }
+      } else if (len > 0.4) { this.vx = (c.x / len) * 4.2; this.vy = (c.y / len) * 4.2; this.adDir = true; }
       else this.adDir = false;
       this.setState('airdodge', 'airdodge');
       return true;
@@ -170,9 +185,186 @@ export class Fighter {
     return false;
   }
 
+  // ------------------------------------------------------------------ chopes et projections
+  // Coup de chope effectif : celui du perso, ou à défaut une attaque proche réutilisée.
+  effMove(id) {
+    const own = this.def.moves?.[id];
+    const anims = this.def.anims;
+    if (own && own.anim != null && anims[own.anim]) return { ...own, grabKind: id };
+    let base = this.def.moves?.[GRAB_FALLBACK[id]];
+    if (!base || base.anim == null || !anims[base.anim]) base = this.def.moves?.jab;
+    if (!base || base.anim == null || !anims[base.anim]) return null;
+    const d = MOVE_INFO[id]?.d || {};
+    return {
+      ...base, hits: (base.hits || []).slice(0, 1).map((x) => ({ ...x, ...d })),
+      vx: 0, vy: 0, charge: null, helpless: false, proj: null, landLag: 0,
+      flip: id === 'bthrow', grabKind: id,
+    };
+  }
+  // Éléments de l'anim pendant lesquels la chope attrape
+  grabWindow(m) {
+    const hits = m.hits || [];
+    const n = this.anim.anim?.frames.length || 1;
+    if (hits.length) return [Math.min(...hits.map((x) => x.from)), Math.max(...hits.map((x) => x.to))];
+    return [Math.floor(n * 0.3), Math.max(Math.floor(n * 0.3), Math.floor(n * 0.55))];
+  }
+  // Dégâts et éjection d'une projection : somme des dégâts, éjection du dernier coup
+  grabParams(m) {
+    const hits = m.hits || [];
+    if (!hits.length) return { ...(MOVE_INFO[m.grabKind]?.d || {}) };
+    const last = hits[hits.length - 1];
+    return { ...last, dmg: hits.reduce((t, x) => t + (x.dmg || 0), 0) };
+  }
+  startGrab(match) {
+    if (!this.grounded) return false;
+    const m = this.effMove('grab');
+    if (!m) return false;
+    this.vx *= 0.3;
+    return this.startMoveObj('grab', m);
+  }
+  // Appelé à chaque image d'un coup de chope. Renvoie true si l'état a changé.
+  grabStep(match, c) {
+    const m = this.move;
+    const kind = m.grabKind;
+    const e = this.anim.elem;
+    if (kind === 'grab') {
+      if (this.holding || !match) return false;
+      const [a, b] = this.grabWindow(m);
+      if (e < a || e > b) return false;
+      // Zone de chope devant le perso, plus les hitbox de l'anim
+      const fc = this.facing;
+      const zone = [this.x + fc * this.w * 0.1, this.y - this.h * 0.9, this.x + fc * (this.w * 0.5 + 22 * this.scale), this.y];
+      const box = [Math.min(zone[0], zone[2]), zone[1], Math.max(zone[0], zone[2]), zone[3]];
+      const f = this.anim.frame;
+      const boxes = [box, ...(f && f.c1.length ? f.c1.map((x) => this.toWorld(x)) : [])];
+      for (const o of match.fighters) {
+        if (o === this || !match.enemies(this, o) || !o.canBeHit || o.grabbedBy || o.holding) continue;
+        if (['ledge', 'respawn', 'grabbed', 'climb'].includes(o.state)) continue;
+        if (!o.grounded && Math.abs(o.y - this.y) > 24) continue;
+        if (boxes.some((bx) => o.hurtboxes().some((hb) => overlap(bx, hb)))) { this.catchFoe(match, o); return true; }
+      }
+      return false;
+    }
+    const foe = this.holding;
+    if (!foe || foe.grabbedBy !== this) return false;
+    if (this.grabDone) return false;
+    const at = (m.hits || []).length ? m.hits[0].from : Math.floor((this.anim.anim?.frames.length || 1) * 0.4);
+    if (e < at && !this.anim.ended) return false;
+    this.grabDone = true;
+    const p = this.grabParams(m);
+    if (kind === 'pummel') {
+      const d = p.dmg || 2;
+      foe.percent = Math.min(999, foe.percent + d);
+      this.stats.dealt += d;
+      foe.hitlag = 6; this.hitlag = 3; foe.flash = 4;
+      match?.onHit(foe, this, d, 0);
+      return false;
+    }
+    // Projection
+    this.holding = null;
+    foe.grabbedBy = null;
+    foe.takeHit(match, p, this, kind === 'bthrow' ? -this.facing : this.facing, { unblockable: true });
+    return false;
+  }
+  catchFoe(match, o) {
+    this.holding = o;
+    o.grabbedBy = this;
+    // Plus l'adversaire a de %, plus la chope dure longtemps
+    this.grabT = Math.floor(70 + o.percent * 0.9);
+    o.releaseLedge();
+    o.move = null; o.moveId = null; o.attackFlip = false; o.fastFall = false;
+    o.vx = o.vy = o.kbVx = o.kbVy = 0;
+    o.setState('grabbed', 'hurt');
+    this.holdNo = this.anim.no; this.holdElem = this.anim.elem;
+    this.move = null; this.moveId = null; this.attackFlip = false; this.vx = 0;
+    this.setState('holding');
+    this.hitlag = 4; o.hitlag = 4;
+    match?.fx.puff(o.x, o.y - o.h * 0.5, 0.5);
+  }
+  // Garde la pose de chope pendant qu'on tient l'adversaire
+  holdPose() {
+    if (this.holdNo == null) return;
+    this.anim.set(this.holdNo, true);
+    this.anim.elem = Math.min(this.holdElem || 0, (this.anim.anim?.frames.length || 1) - 1);
+  }
+  // Lâche l'adversaire (fin du temps de chope ou il s'est libéré)
+  grabRelease(match, quiet = false) {
+    const o = this.holding;
+    this.holding = null;
+    if (o && o.grabbedBy === this) {
+      o.grabbedBy = null;
+      if (!o.dead) {
+        o.kbVx = this.facing * 2.2; o.hitstun = 0; o.invuln = Math.max(o.invuln, 8);
+        o.setState(o.grounded ? 'idle' : 'air', o.grounded ? 'idle' : 'fall');
+      }
+    }
+    if (quiet) this.setState('idle', 'idle');
+    else { this.kbVx = -this.facing * 1.6; this.landLag = 12; this.setState('land', 'land'); }
+  }
+  // Annule toute chope en cours (on est touché, KO…)
+  dropGrab() {
+    let o = this.holding;
+    this.holding = null;
+    if (o && o.grabbedBy === this) {
+      o.grabbedBy = null;
+      if (o.state === 'grabbed') o.setState(o.grounded ? 'idle' : 'air', o.grounded ? 'idle' : 'fall');
+    }
+    o = this.grabbedBy;
+    this.grabbedBy = null;
+    if (o && o.holding === this) {
+      o.holding = null;
+      if (o.state === 'holding' || (o.state === 'attack' && o.move?.grabKind)) { o.move = null; o.moveId = null; o.setState('idle', 'idle'); }
+    }
+  }
+  st_holding(match, c) {
+    this.holdAnim = true;
+    this.vx *= 0.5;
+    const o = this.holding;
+    if (!o || o.dead || o.grabbedBy !== this || !this.grounded) return this.grabRelease(match, true);
+    if (--this.grabT <= 0) return this.grabRelease(match);
+    if (this.stateT < 10) return;
+    // Direction (ou stick droit) : projection
+    const x = c.cPressed ? c.cx : c.x, y = c.cPressed ? c.cy : c.y;
+    let t = null;
+    if (Math.abs(x) > 0.6 || Math.abs(y) > 0.6) {
+      t = Math.abs(y) > Math.abs(x) ? (y < 0 ? 'uthrow' : 'dthrow') : (Math.sign(x) === this.facing ? 'fthrow' : 'bthrow');
+    }
+    if (t) {
+      const m = this.effMove(t);
+      if (m) this.startMoveObj(t, m); else this.grabRelease(match);
+      return;
+    }
+    // Attaque : frappe en chope
+    if (c.pressed.attack || c.pressed.grab) {
+      c.consume('attack', 'grab');
+      const m = this.effMove('pummel');
+      if (m) this.startMoveObj('pummel', m);
+    }
+  }
+  st_grabbed(match, c) {
+    this.setAnimSlot('hurt');
+    const g = this.grabbedBy;
+    if (!g || g.dead || g.holding !== this) {
+      this.grabbedBy = null;
+      return this.setState(this.grounded ? 'idle' : 'air', this.grounded ? 'idle' : 'fall');
+    }
+    this.facing = -g.facing;
+    this.x = g.x + g.facing * (g.w * 0.5 + this.w * 0.35);
+    this.y = g.y;
+    this.grounded = g.grounded; this.ground = g.ground;
+    this.vx = this.vy = this.kbVx = this.kbVy = 0;
+    // Marteler les boutons / le stick pour se libérer plus vite
+    if ((c.buf && BUTTONS.some((k) => c.buf[k] === 0)) || c.xFlick === 0 || c.yFlick === 0) g.grabT -= 3;
+  }
+
   startMove(id) {
     const m = this.def.moves?.[id];
     if (!m || m.anim == null || !this.def.anims[m.anim]) return false;
+    return this.startMoveObj(id, m);
+  }
+
+  startMoveObj(id, m) {
+    this.grabDone = false;
     this.move = m; this.moveId = id;
     this.hitSets = new Map(); this.chargeT = 0; this.projDone = new Set(); this.impulseDone = false;
     this.attackFlip = !!m.flip;
@@ -226,7 +418,7 @@ export class Fighter {
     if (this.stateT <= 3 && (c.pressed.attack || c.pressed.special || c.pressed.smash) && c.up && !c.held.jump) {
       if (this.groundAttack(match, c, false)) { c.consume('attack', 'special', 'smash'); return; }
     }
-    if (this.stateT >= 4) {
+    if (this.stateT >= 3) {
       const full = c.held.jump || (K.tapJump && c.up);
       this.vy = -(full ? this.S.jumpForce : this.S.shortHopForce);
       this.vx = Math.max(-this.S.airSpeed * 1.1, Math.min(this.S.airSpeed * 1.1, this.vx + c.x * 0.6));
@@ -254,11 +446,18 @@ export class Fighter {
     this.tryLedge(match);
   }
   st_airdodge(match, c) {
+    if (K.ssfAirdodge) {
+      this.intangible = this.stateT >= 3 && this.stateT <= 20;
+      this.airDrift(c, 0.5);
+      if (this.stateT >= 28) this.setState('air', 'fall');
+      return;
+    }
     this.intangible = this.stateT >= 2 && this.stateT <= 26;
     if (this.adDir) { this.vx *= 0.9; this.vy *= 0.9; }
     if (this.stateT >= 32) { this.setState('air', 'fall'); }
   }
   st_attack(match, c) {
+    if (this.move && this.move.grabKind && this.grabStep(match, c)) return;
     const m = this.move;
     const f = this.anim.frame;
     // Charge des smashs
@@ -283,6 +482,13 @@ export class Fighter {
     }
     const ended = this.anim.ended || (f && f.t < 0 && this.anim.time > 0) || this.stateT > 400;
     if (ended) {
+      // Après une frappe en chope, on continue de tenir l'adversaire
+      if (this.moveId === 'pummel' && this.holding) {
+        this.attackFlip = false; this.move = null; this.moveId = null;
+        this.setState('holding'); this.holdPose();
+        return;
+      }
+      if (m.grabKind && this.holding && m.grabKind !== 'grab') this.grabRelease(match, true);
       this.attackFlip = false;
       const helpless = m.helpless && !this.grounded;
       this.move = null; this.moveId = null;
@@ -294,6 +500,7 @@ export class Fighter {
     this.intangible = false;
     this.shieldHP -= 0.13;
     if (this.shieldHP <= 0) return this.shieldBreak(match);
+    if ((c.pressed.attack || c.pressed.grab) && this.startGrab(match)) { c.consume('attack', 'grab', 'shield'); return; }
     if (c.pressed.jump || (K.tapJump && c.yFlick === 0 && c.up)) { c.consume('jump'); this.setState('jumpsquat', 'jumpSquat'); return; }
     if (c.xFlick <= 1 && Math.abs(c.x) > 0.6) { this.rollDir = Math.sign(c.x); this.setState('roll', 'roll'); return; }
     if (c.yFlick <= 1 && c.down) { this.setState('dodge', 'dodge'); return; }
@@ -353,9 +560,11 @@ export class Fighter {
         this.setState('air', 'jump'); this.doubleJumped = false;
         return;
       }
-      if (c.pressed.attack) { c.consume('attack'); this.climb(L); this.startMove('ledgeAtk'); return; }
+      if (c.pressed.attack) { c.consume('attack'); this.climb(L); this.invuln = Math.max(this.invuln, 14); this.startMove('ledgeAtk'); return; }
+      // Bouclier au rebord : roulade sur le terrain
+      if (c.pressed.shield) { c.consume('shield'); this.climb(L); this.rollDir = -L.side; this.invuln = Math.max(this.invuln, 6); this.setState('roll', 'roll'); return; }
       if ((c.y < -0.5 && c.yFlick < 10) || (Math.sign(c.x) === toward && Math.abs(c.x) > 0.6 && c.xFlick < 10)) { this.climbT = 0; this.setState('climb', 'jumpSquat'); return; }
-      if (c.down || (Math.sign(c.x) === -toward && Math.abs(c.x) > 0.6) || c.pressed.shield) { this.releaseLedge(); this.regrab = 30; this.x += L.side * 3; this.setState('air', 'fall'); return; }
+      if (c.down || (Math.sign(c.x) === -toward && Math.abs(c.x) > 0.6)) { this.releaseLedge(); this.regrab = 30; this.x += L.side * 3; this.setState('air', 'fall'); return; }
     }
     if (this.ledgeT > K.ledgeTime) { this.releaseLedge(); this.regrab = 60; this.setState('air', 'fall'); }
   }
@@ -390,7 +599,8 @@ export class Fighter {
       this.grounded = false; this.ground = null;
       this.jumpsLeft = this.S.jumps - 1; this.airdodgeUsed = false; this.sideBUsed = false; this.fastFall = false;
       this.attackFlip = false; this.move = null; this.moveId = null;
-      this.invuln = Math.max(this.invuln, 36);
+      if (this.ledgeInv !== false) this.invuln = Math.max(this.invuln, 36);
+      this.ledgeInv = false;
       this.setState('ledge', 'ledge');
       return true;
     }
@@ -402,7 +612,7 @@ export class Fighter {
     if (Math.abs(c.x) > 0.2) {
       this.vx += c.x * this.S.airAccel;
       if (Math.abs(this.vx) > max) this.vx -= Math.sign(this.vx) * Math.min(Math.abs(this.vx) - max, 0.1);
-    } else this.vx *= 0.985;
+    } else this.vx *= 0.97;
   }
 
   shieldBreak(match) {
@@ -418,7 +628,7 @@ export class Fighter {
   physics(match) {
     const st = this.stage = match?.stage;
     const oldX = this.x, oldY = this.y;
-    if (this.state === 'ledge' || this.state === 'climb' || this.state === 'respawn') return;
+    if (this.state === 'ledge' || this.state === 'climb' || this.state === 'respawn' || this.state === 'grabbed') return;
 
     if (this.grounded) {
       const moving = ['walk', 'run'].includes(this.state) || (this.state === 'attack' && this.move && this.move.vx && this.anim.elem >= (this.move.at || 0));
@@ -478,13 +688,14 @@ export class Fighter {
     this.fastFall = false;
     this.jumpsLeft = this.S.jumps - 1;
     this.airdodgeUsed = false; this.sideBUsed = false; this.doubleJumped = false;
+    this.ledgeInv = true;
     switch (this.state) {
       case 'air': this.landLag = 3; this.setState('land', 'land'); break;
       case 'attack':
         if (this.move && this.move.landLag) { this.landLag = this.move.landLag; this.attackFlip = false; this.move = null; this.moveId = null; this.setState('land', 'land'); }
         break;
       case 'helpless': this.landLag = 14; this.setState('land', 'land'); break;
-      case 'airdodge': this.landLag = 10; this.vx *= 0.4; this.setState('land', 'land'); break;
+      case 'airdodge': this.landLag = K.ssfAirdodge ? 8 : 10; this.vx *= K.ssfAirdodge ? 0.1 : 0.4; this.setState('land', 'land'); break;
       case 'tumble': case 'dizzyfly':
         if (this.state === 'dizzyfly') { this.setState('dizzy', 'dizzy'); break; }
         if (this.techWindow > 0) { this.tech(match, land); break; }
@@ -506,7 +717,7 @@ export class Fighter {
 
   // ------------------------------------------------------------------ combat
   hitboxes() {
-    if (this.state !== 'attack' || !this.move) return null;
+    if (this.state !== 'attack' || !this.move || this.move.grabKind) return null;
     const f = this.anim.frame;
     if (!f || !f.c1.length) return null;
     const e = this.anim.elem;
@@ -529,6 +740,8 @@ export class Fighter {
   get canBeHit() { return !this.dead && !this.intangible && this.invuln <= 0 && this.state !== 'respawn'; }
 
   takeHit(match, hit, attacker, dirFacing, opts = {}) {
+    this.dropGrab();
+    this.ledgeInv = true;
     const chargeMul = opts.chargeMul || 1;
     const dmg = Math.round(hit.dmg * chargeMul * 10) / 10;
     // Bouclier
@@ -563,7 +776,7 @@ export class Fighter {
     this.releaseLedge();
     if (this.grounded && (this.kbVy < -0.01 || kb >= K.tumbleKB)) { this.grounded = false; this.ground = null; this.y -= 1; if (this.kbVy > 0) this.kbVy = -this.kbVy * 0.8; }
     this.hitstun = Math.floor(kb * K.hitstun);
-    const hl = Math.min(20, Math.floor(dmg * 0.38 + 4));
+    const hl = Math.min(22, Math.floor(dmg * 0.45 + 5));
     this.hitlag = hl;
     if (attacker) attacker.hitlag = hl;
     this.attackFlip = false; this.move = null; this.moveId = null; this.fastFall = false;
@@ -578,6 +791,7 @@ export class Fighter {
 
   // ------------------------------------------------------------------ mort / réapparition
   die(match) {
+    this.dropGrab();
     this.dead = true; this.deadT = 0; this.releaseLedge();
     this.stocks--;
   }

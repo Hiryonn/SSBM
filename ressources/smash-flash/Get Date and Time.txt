@@ -1,0 +1,47 @@
+itemwon = "";
+function updateDate () {
+function howlong(arg) {
+        if (length(arg)==1) {
+                arg = "0" + arg;
+                return arg;
+        }
+        else {
+                arg = arg;
+                return arg;
+        }
+}
+myDate = new Date();
+mnt = howlong(String(myDate.getMinutes()));
+dd = myDate.getDate();
+mm = myDate.getMonth();
+yyyy = myDate.getFullYear();
+switch (mm) {
+        case 0:		mm = "January";
+        break;
+        case 1:		mm = "February";
+        break;
+        case 2:		mm = "March";
+        break;
+        case 3:		mm = "April";
+        break;
+        case 4:		mm = "May";
+        break
+        case 5:		mm = "June";
+        break;
+        case 6:		mm = "July";
+        break
+        case 7:		mm = "August";
+        break
+        case 8:		mm = "September";
+        break
+        case 9:		mm = "October";
+        break
+        case 10:	mm = "November";
+        break
+        case 11:	mm = "December";
+        break
+}
+textdate = "<br>"+mm+"."+dd+"."+yyyy+hr+":"+mnt+"<br>"+itemwon;
+}
+_root.savedata.data.special += textdate;
+_root.savedata.flush();

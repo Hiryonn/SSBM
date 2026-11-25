@@ -47,18 +47,16 @@ if errorlevel 1 goto erreur
 
 echo.
 echo [4/5] Construction de l'application Windows...
-copy /y "dist\index.html" "desktop\index.html" >nul
-if errorlevel 1 goto erreur
-pushd desktop
+pushd builder
 call npm install --no-audit --no-fund
 if errorlevel 1 goto erreur_desktop
-call npx electron-builder --win dir --x64
+call npx electron-builder --win dir --x64 --publish never
 if errorlevel 1 goto erreur_desktop
 popd
 
 echo.
 echo [5/5] Mise en place dans PlatFight-Studio-Windows\PlatFight Studio...
-robocopy "desktop\sortie\win-unpacked" "PlatFight-Studio-Windows\PlatFight Studio" /MIR /NFL /NDL /NJH /NJS /NP >nul
+robocopy "builder\dist\win-unpacked" "PlatFight-Studio-Windows\PlatFight Studio" /MIR /NFL /NDL /NJH /NJS /NP >nul
 if errorlevel 8 goto erreur
 
 echo.

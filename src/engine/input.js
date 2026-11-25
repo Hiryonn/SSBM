@@ -1,11 +1,11 @@
 // Entrées clavier et manettes, normalisées par joueur.
 
-export const BUTTONS = ['attack', 'special', 'jump', 'shield', 'smash', 'start'];
+export const BUTTONS = ['attack', 'special', 'jump', 'shield', 'smash', 'start', 'grab'];
 export const DIRS = ['left', 'right', 'up', 'down'];
 
 export const DEFAULT_KEYS = [
-  { left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'], attack: ['KeyJ'], special: ['KeyK'], jump: ['KeyL', 'Space'], shield: ['Semicolon', 'ShiftLeft'], smash: ['KeyI'], start: ['Enter'] },
-  { left: ['ArrowLeft'], right: ['ArrowRight'], up: ['ArrowUp'], down: ['ArrowDown'], attack: ['Numpad1', 'Comma'], special: ['Numpad2', 'Period'], jump: ['Numpad3', 'Slash'], shield: ['Numpad0', 'ShiftRight'], smash: ['Numpad5', 'Quote'], start: ['NumpadEnter'] },
+  { left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'], attack: ['KeyJ'], special: ['KeyK'], jump: ['KeyL', 'Space'], shield: ['Semicolon', 'ShiftLeft'], smash: ['KeyI'], start: ['Enter'], grab: ['KeyU'] },
+  { left: ['ArrowLeft'], right: ['ArrowRight'], up: ['ArrowUp'], down: ['ArrowDown'], attack: ['Numpad1', 'Comma'], special: ['Numpad2', 'Period'], jump: ['Numpad3', 'Slash'], shield: ['Numpad0', 'ShiftRight'], smash: ['Numpad5', 'Quote'], start: ['NumpadEnter'], grab: ['Numpad4'] },
 ];
 
 const keys = new Set();
@@ -41,7 +41,7 @@ export function keyLabel(code) {
 
 // Boutons de manette par défaut (disposition « standard » du navigateur :
 // 0 = bas, 1 = droite, 2 = gauche, 3 = haut, 4/5 = bumpers, 6/7 = gâchettes, 8 = select, 9 = start)
-export const DEFAULT_PAD = { attack: [1], special: [0], jump: [2, 3], shield: [4, 5, 6, 7], smash: [], start: [9] };
+export const DEFAULT_PAD = { attack: [1], special: [0], jump: [2, 3], shield: [4, 6, 7], grab: [5], smash: [], start: [9] };
 export const PAD_NAMES = ['Bas (A·B·✕)', 'Droite (B·A·○)', 'Gauche (X·Y·□)', 'Haut (Y·X·△)', 'LB·L·L1', 'RB·R·R1', 'LT·ZL·L2', 'RT·ZR·R2', 'Select', 'Start', 'Clic stick G', 'Clic stick D', 'Croix ↑', 'Croix ↓', 'Croix ←', 'Croix →', 'Home'];
 export const padButtonName = (n) => PAD_NAMES[n] || 'Bouton ' + n;
 
@@ -87,6 +87,7 @@ export class Controller {
         b.shield = anyB(pm.shield);
         b.smash = anyB(pm.smash) || Math.abs(cx) > 0.5 || Math.abs(cy) > 0.5;
         b.start = anyB(pm.start);
+        b.grab = anyB(pm.grab);
       }
     } else if (s.type === 'cpu' && this.cpu) {
       const c = this.cpu;

@@ -14,6 +14,15 @@ if errorlevel 1 (
 )
 
 echo.
+echo  [0/2] Assemblage du jeu depuis src\ ...
+pushd ..
+call npm install
+if errorlevel 1 (popd & goto erreur)
+call node build.mjs --min
+if errorlevel 1 (popd & goto erreur)
+popd
+
+echo.
 echo  [1/2] Installation des outils (la premiere fois : quelques minutes)...
 call npm install
 if errorlevel 1 goto erreur

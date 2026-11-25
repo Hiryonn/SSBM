@@ -38,6 +38,7 @@ screens.stageeditor = (id, keep) => {
 
   const rebuild = () => { if (stage) { stage.def = def; stage.rebuild(); } draw(); };
   const save = async () => {
+    def.edited = true;
     const saved = await saveStage(def);
     if (saved.id !== def.id) Object.assign(def, { id: saved.id, name: saved.name, builtin: false });
     E.dirty = false; updateTitle(); toast('Stage enregistré');
@@ -66,7 +67,7 @@ screens.stageeditor = (id, keep) => {
         h('button', { class: 'btn ghost', title: 'Annuler (Ctrl+Z)', onclick: undo }, '↶'),
         h('button', { class: 'btn ghost', title: 'Rétablir (Ctrl+Y)', onclick: redo }, '↷'),
         fighterSel,
-        h('button', { class: 'btn', onclick: test }, '▶ Tester'),
+        h('button', { class: 'btn', title: 'Entraînement rapide sur ce stage, sans enregistrer', onclick: test }, '▶ Essayer ce stage'),
         h('button', { class: 'btn primary', onclick: save }, 'Enregistrer'))),
     h('div', { class: 'ed-body' }, left, h('div', { class: 'ed-center' }, toolbar, h('div', { class: 'ed-stage' }, canvas)), right));
 
@@ -436,5 +437,6 @@ screens.stageeditor = (id, keep) => {
       raf = requestAnimationFrame(loop);
     },
     leave() { alive = false; cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener('keydown', onKey); },
+    dirty: () => E.dirty,
   };
 };

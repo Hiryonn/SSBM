@@ -1,7 +1,7 @@
 // Réglages globaux du gameplay (modifiables dans les options).
 export const K = {
-  launch: 0.042,      // vitesse d'éjection par point de knockback (px/frame)
-  decay: 0.06,        // perte de vitesse d'éjection par frame
+  launch: 0.048,      // vitesse d'éjection par point de knockback (px/frame)
+  decay: 0.08,        // perte de vitesse d'éjection par frame
   hitstun: 0.4,       // frames d'étourdissement par point de knockback
   tumbleKB: 80,       // au-delà : éjection en vrille
   shieldMax: 50,
@@ -10,6 +10,8 @@ export const K = {
   tapJump: true,
   di: 15,             // degrés max d'influence directionnelle
   gameSpeed: 1,
+  ssfAirdodge: true,  // esquive aérienne façon Smash Flash (sinon façon Melee, avec wavedash)
+  physVer: 2,         // version des réglages de physique (migration des anciens réglages)
 };
 
 export function setConstants(obj) {

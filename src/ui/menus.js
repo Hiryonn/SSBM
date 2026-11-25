@@ -1,6 +1,7 @@
 // Écran titre, sélection des persos et du stage, entraînement.
 import { h, clear, toast, select, check, num } from './dom.js';
-import { app, go, screens, drawFighterThumb, drawStageThumb, saveSettings, bankFor, isPersistent } from '../app.js';
+import { app, go, screens, drawFighterThumb, drawStageThumb, saveSettings, bankFor, isPersistent, endPreview } from '../app.js';
+import { desktop } from '../data/game.js';
 import { Match } from '../engine/match.js';
 import { PLAYER_COLORS } from '../data/defs.js';
 import { AnimPlayer, drawFrame } from '../engine/sprites.js';
@@ -13,7 +14,29 @@ screens.title = () => {
   const item = (label, sub, fn, cls = '') => h('button', { class: 'menu-item ' + cls, onclick: () => { unlockAudio(); sfx('menu'); fn(); } },
     h('span', { class: 'mi-label' }, label), h('span', { class: 'mi-sub' }, sub));
   const counts = `${app.fighters.length} perso${app.fighters.length > 1 ? 's' : ''} · ${app.stages.length} stage${app.stages.length > 1 ? 's' : ''}`;
-  const el = h('div', { class: 'screen title' }, canvas,
+  const G = app.player;
+  let el;
+  if (G) {
+    // ---- Écran titre d'un jeu exporté (ou de son aperçu)
+    const exitPreview = () => { endPreview(); go('exporter'); };
+    const logo = G.logo
+      ? h('img', { class: 'game-logo', src: G.logo, alt: G.name })
+      : h('div', { class: 'logo' }, h('span', { class: 'l1' }, G.name));
+    const dk = desktop();
+    el = h('div', { class: 'screen title' + (G.titleImage ? ' has-image' : ''), style: G.titleImage ? { backgroundImage: `url("${G.titleImage}")` } : null },
+      G.titleImage ? null : canvas,
+      app.preview ? h('div', { class: 'preview-banner' }, 'Aperçu de « ' + G.name + ' »', h('button', { class: 'btn small', onclick: exitPreview }, 'Revenir à « Créer mon jeu »')) : null,
+      h('div', { class: 'title-wrap' },
+        logo,
+        G.subtitle ? h('p', { class: 'tagline' }, G.subtitle) : null,
+        h('nav', { class: 'menu' },
+          item('Combat', 'Jusqu\'à 4 joueurs ou CPU', () => go('versus'), 'red'),
+          G.training ? item('Entraînement', 'Entraîne-toi avec ton perso', () => go('training'), 'yellow') : null,
+          item('Options', 'Touches, manettes, son', () => go('options')),
+          dk && !app.preview ? item('Quitter', '', () => dk.quit()) : null),
+        h('p', { class: 'foot' }, [G.author ? 'Par ' + G.author : null, 'Version ' + (G.gameVersion || '1.0'), 'Créé avec PlatFight Studio'].filter(Boolean).join(' · '))));
+    el.addEventListener('keydown', (e) => { if (e.code === 'Escape' && app.preview) exitPreview(); });
+  } else el = h('div', { class: 'screen title' }, canvas,
     h('div', { class: 'title-wrap' },
       h('div', { class: 'logo' }, h('span', { class: 'l1' }, 'PLATFIGHT'), h('span', { class: 'l2' }, 'STUDIO')),
       h('p', { class: 'tagline' }, 'Crée ton jeu de combat façon Smash, importe tes persos Mugen et JUS, et joue jusqu\'à 4.'),
@@ -22,6 +45,7 @@ screens.title = () => {
         item('Entraînement', 'Teste un perso, hitbox visibles', () => go('training'), 'yellow'),
         item('Éditeur de persos', 'Anims, hitbox, coups, stats', () => go('charlist'), 'blue'),
         item('Éditeur de stages', 'Sols, plateformes, décor, zones de KO', () => go('stagelist'), 'green'),
+        item('Créer mon jeu', 'Exporte ton propre jeu, prêt à partager', () => go('exporter'), 'yellow'),
         item('Importer', 'Persos et stages Mugen (.def/.sff/.air), zip', () => go('importer')),
         item('Options', 'Touches, son, physique, sauvegardes', () => go('options'))),
       h('p', { class: 'foot' }, counts, isPersistent() ? '' : ' · ⚠ stockage indisponible : rien ne sera gardé à la fermeture')));
@@ -38,8 +62,10 @@ screens.title = () => {
   return {
     el,
     async enter() {
+      if (G && G.titleImage) return;
       const pool = app.fighters;
-      const stage = app.stages[Math.floor(Math.random() * app.stages.length)];
+      const stage = (G && G.titleStage && app.stages.find((x) => x.id === G.titleStage)) || app.stages[Math.floor(Math.random() * app.stages.length)];
+      if (!stage) return;
       const n = pool.length ? Math.min(4, Math.max(2, pool.length)) : 0;
       const players = Array.from({ length: n }, (_, k) => ({ def: pool[(k + Math.floor(Math.random() * pool.length)) % pool.length], type: 'cpu', level: 4 + k, costume: k }));
       try {
@@ -68,7 +94,7 @@ function defaultPlayers() {
 function noFighters(title) {
   return {
     el: h('div', { class: 'screen panel-screen' },
-      h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, title)),
+      h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, title)),
       h('div', { class: 'card narrow' },
         h('h2', null, 'Aucun perso pour l\'instant'),
         h('p', null, 'Importe un perso Mugen / JUS (dossier, fichiers ou .zip) ou un fichier PlatFight pour commencer.'),
@@ -232,7 +258,7 @@ screens.versus = () => {
 
   const el = h('div', { class: 'screen versus' },
     h('header', { class: 'bar' },
-      h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'),
+      h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'),
       h('h1', null, 'Combat'),
       h('button', { class: 'btn primary big go', onclick: start }, 'C\'EST PARTI !')),
     h('div', { class: 'vs-body' },
@@ -279,7 +305,7 @@ screens.training = (preset = {}) => {
     launchTraining({ fighterId: st.fighterId, stageId: st.stageId, cpu: st.cpu, src: st.src, oppId: st.oppId, back: () => go('training', st) });
   };
   const el = h('div', { class: 'screen panel-screen' },
-    h('header', { class: 'bar' }, h('button', { class: 'btn ghost', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Entraînement')),
+    h('header', { class: 'bar' }, h('button', { class: 'btn ghost back-menu', onclick: () => go('title') }, '← Menu'), h('h1', null, 'Entraînement')),
     h('div', { class: 'card narrow' }, h('p', { class: 'muted' }, 'Pourcentages remis à zéro avec R, hitbox avec H, vies infinies.'), body));
   return { el, enter: render };
 };

@@ -23,6 +23,13 @@ jobs:
         with:
           node-version: 20
 
+      # Le jeu est assemblé depuis src/ (crée builder/index.html)
+      - name: Assembler le jeu depuis src/
+        working-directory: .
+        run: |
+          npm install
+          node build.mjs --min
+
       - name: Numéro de version depuis le tag
         if: github.event_name == 'release' && startsWith(github.ref_name, 'v')
         run: npm version "${{ github.ref_name }}" --no-git-tag-version --allow-same-version
