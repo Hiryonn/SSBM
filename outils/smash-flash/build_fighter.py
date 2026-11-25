@@ -103,7 +103,10 @@ def build(spec, out_path, verbose=True):
     parts.update(spec.get('parts', {}))
     sliced = {}
     for pk, reg in parts.items():
-        sliced[pk] = slice_sheet(sheet, region=reg, tol=spec.get('tol', 6), gap=spec.get('gap', 2), extra_bg=spec.get('extra_bg', ()))
+        sh = sheet
+        if isinstance(reg, dict):  # autre planche : dict(sheet=..., region=...)
+            sh = os.path.join(os.path.dirname(sheet), reg['sheet']); reg = reg.get('region')
+        sliced[pk] = slice_sheet(sh, region=reg, tol=spec.get('tol', 6), gap=spec.get('gap', 2), extra_bg=spec.get('extra_bg', ()))
     flip = spec.get('face', 'right') == 'left'
     # ---- sprites utilisés
     used = {}
