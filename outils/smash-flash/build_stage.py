@@ -119,3 +119,124 @@ build('Château de Peach', [dict(name='Décor', img=scene, x=x0, y=-372 * S, sca
       spawns=[[-120, 0], [120, 0], [-60, 0], [60, 0]], respawn=[0, -150],
       blast=dict(left=x0 - 140, right=-x0 + 140, top=-360, bottom=320),
       camera=dict(left=x0 - 40, right=-x0 + 40, top=-280, bottom=160))
+
+# ---------------- Stade Pokémon
+a = load('PRBStage4.GIF')
+arena, (ax, ay) = piece(a, (0, 140, 475, 300))
+plat, (px, py) = piece(a, (100, 115, 190, 140))
+S = 1.05
+gy = 192                          # bord avant du terrain
+half = 446 * S / 2
+x0 = -(ax + 233) * S              # centre du terrain (x≈233) en 0
+L = [dict(name='Stade', img=arena, x=x0 + ax * S - ax * S, y=(ay - gy) * S, scale=S)]
+L[0]['x'] = (ax - 233) * S
+pw = plat.shape[1] * S
+P = []
+for cx in (-(233 - 144) * S, (330 - 233) * S):
+    L.append(dict(name='Plateforme', img=plat, x=cx - pw / 2, y=(py - gy) * S, scale=S))
+    P.append(dict(x1=cx - pw / 2 + 3, x2=cx + pw / 2 - 3, y=(125 - gy) * S, style='none'))
+build('Stade Pokémon', L, 'pokemon-stadium', music='Pokemon_Medley.mp3', author='Cleod 9', sky=['#4a86d8', '#cfe6ff'],
+      ground=[dict(x1=(20 - 233) * S, y1=0, x2=(446 - 233) * S, y2=(290 - gy) * S, style='none')], platforms=P,
+      spawns=[[-120, 0], [120, 0], [-60, 0], [60, 0]], respawn=[0, -160], **cam_blast(225))
+
+# ---------------- Royaume II (Subcon)
+a = load('subcon.gif')
+scene = solid(a[:384])
+S = 1.3
+ox = -320 * S; gy = 209
+G = lambda x: ox + x * S
+Y = lambda y: (y - gy) * S
+build('Royaume II', [dict(name='Décor', img=scene, x=ox, y=Y(0), scale=S)], 'subcon', music='Burly Brawl.mp3', author='Tonberry2k',
+      bgColor='#c0f8f8', ground=[dict(x1=G(0), y1=0, x2=G(189), y2=Y(384), style='none'), dict(x1=G(449), y1=0, x2=G(640), y2=Y(384), style='none'),
+                                 dict(x1=G(227), y1=Y(264), x2=G(275), y2=Y(384), style='none'), dict(x1=G(363), y1=Y(264), x2=G(411), y2=Y(384), style='none')],
+      platforms=[dict(x1=G(275), x2=G(363), y=Y(265), style='none')],
+      spawns=[[G(90), 0], [G(545), 0], [G(250), Y(264)], [G(386), Y(264)]], respawn=[0, -150],
+      blast=dict(left=G(0) - 160, right=G(640) + 160, top=-380, bottom=Y(384) + 60),
+      camera=dict(left=G(0) - 20, right=G(640) + 20, top=-300, bottom=Y(330)))
+
+# ---------------- Île de Wario
+a = load('allstarstage.gif'); w = load('war4.gif')
+isl, (ix, iy) = piece(a, (0, 0, 596, 150))
+sky, _ = piece(w, (0, 0, 240, 160), trim=False)
+pl, _ = piece(w, (10, 291, 116, 326))
+S = 1.2; gy = 110
+half = 596 * S / 2
+pw = pl.shape[1] * S
+L = [dict(name='Ciel et mer', img=solid(sky), x=-480, y=-330, delta=[0.3, 0.3], tile=[1, 0], scale=2.6),
+     dict(name='Île', img=isl, x=-half, y=(iy - gy) * S, scale=S)]
+P = []
+for cx, y in ((-150, -75), (150, -75), (0, -145)):
+    L.append(dict(name='Plateforme', img=pl, x=cx - pw / 2, y=y - 6, scale=S))
+    P.append(dict(x1=cx - pw / 2 + 6, x2=cx + pw / 2 - 6, y=y, style='none'))
+build("Île de Wario", L, 'wario-island', music='59 - Targets!.mp3', author='Bacon', bgColor='#5ab4f0',
+      ground=[dict(x1=-half + 2, y1=0, x2=half - 2, y2=(150 - gy) * S, style='none')], platforms=P,
+      spawns=[[-150, 0], [150, 0], [-60, 0], [60, 0]], respawn=[0, -180], **cam_blast(half, -290))
+
+# ---------------- Green Hill
+b = load('emeral2.png'); bs = load('backgroundstuff.gif')
+back, _ = piece(b, (0, 0, 508, 228), trim=False)
+p1, (p1x, p1y) = piece(bs, (350, 726, 476, 827))
+p2, (p2x, p2y) = piece(bs, (520, 739, 646, 839))
+S = 1.35
+L = [dict(name='Paysage', img=solid(back), x=-560, y=-189, delta=[0.35, 0.35], tile=[1, 0], scale=2.2)]
+tiles = [p1, p2, p1]
+tw = sum(t.shape[1] for t in tiles) * S
+x = -tw / 2
+for t in tiles:
+    L.append(dict(name='Sol', img=t, x=x, y=-8 * S, scale=S)); x += t.shape[1] * S
+top, _ = piece(bs, (350, 726, 476, 760))
+P = []
+for cx, y in ((-95, -80), (95, -80)):
+    w2 = top.shape[1] * S * 0.75
+    L.append(dict(name='Plateforme', img=top, x=cx - w2 / 2, y=y - 8 * S * 0.75, scale=S * 0.75))
+    P.append(dict(x1=cx - w2 / 2 + 4, x2=cx + w2 / 2 - 4, y=y, style='none'))
+build('Green Hill', L, 'green-hill', music='Sonic_The_Hedgehog_2-Emerald_Hill_Zone.mp3', author='Flare', bgColor='#000080',
+      ground=[dict(x1=-tw / 2 + 2, y1=0, x2=tw / 2 - 2, y2=95 * S, style='none')], platforms=P,
+      spawns=[[-140, 0], [140, 0], [-60, 0], [60, 0]], respawn=[0, -170], **cam_blast(tw / 2))
+
+# ---------------- Dream Land
+a = load('whispywhoods.gif'); sky = load('mariosky.PNG')
+isl, (ix, iy) = piece(a, (60, 1165, 470, 1505))
+clouds, _ = piece(sky, (0, 500, 652, 1060), trim=False)
+S = 1.25; gy = 1407; cx0 = 257
+X = lambda x: (x - cx0) * S
+Y = lambda y: (y - gy) * S
+build('Dream Land', [dict(name='Ciel', img=solid(clouds), x=-600, y=-520, delta=[0.25, 0.25], tile=[1, 0], scale=1.9),
+                     dict(name='Whispy Woods', img=isl, x=X(ix), y=Y(iy), scale=S)], 'dream-land', music='GreenGreens.mp3', author='Jack',
+      bgColor='#8fc4ff', ground=[dict(x1=X(84), y1=0, x2=X(431), y2=Y(1495), style='none')],
+      platforms=[dict(x1=X(232), x2=X(295), y=Y(1283), style='none'), dict(x1=X(132), x2=X(195), y=Y(1340), style='none'),
+                 dict(x1=X(337), x2=X(400), y=Y(1347), style='none')],
+      spawns=[[X(130), 0], [X(385), 0], [X(200), 0], [X(320), 0]], respawn=[0, -180], **cam_blast((431 - 84) * S / 2))
+
+# ---------------- Royaume Champignon (Super Mario World)
+a = load('smwworld1.gif'); bgi = load('smwworld1background.gif')
+X0 = 240
+land, (lx, ly) = piece(a, (X0, 200, 900, 432))
+S = 1.35; gy = 399; cx0 = 570
+X = lambda x: (x - cx0) * S
+Y = lambda y: (y - gy) * S
+clouds2, _ = piece(load('mariosky.PNG'), (0, 500, 652, 1060), trim=False)
+build('Royaume Champignon', [dict(name='Ciel', img=solid(clouds2), x=-600, y=-560, delta=[0.25, 0.25], tile=[1, 0], scale=1.7),
+                             dict(name='Terrain', img=land, x=X(lx), y=Y(ly), scale=S)], 'mushroom-kingdom', music='08 Opening.mp3',
+      bgColor='#e8f4ff', ground=[dict(x1=X(X0), y1=0, x2=X(900), y2=Y(432) + 40, style='none'),
+                                 dict(x1=X(305), y1=Y(351), x2=X(559), y2=0, style='none'),
+                                 dict(x1=X(705), y1=Y(335), x2=X(815), y2=0, style='none')],
+      platforms=[dict(x1=X(608), x2=X(656), y=Y(334), style='none'), dict(x1=X(848), x2=X(880), y=Y(350), style='none')],
+      spawns=[[X(270), 0], [X(870), 0], [X(430), Y(351)], [X(760), Y(335)]], respawn=[0, -200],
+      blast=dict(left=X(X0) - 180, right=X(900) + 180, top=-420, bottom=200), camera=dict(left=X(X0) - 30, right=X(900) + 30, top=-320, bottom=120))
+
+# ---------------- Rêve étoilé (Kirby)
+a = load('kirbyhubroom.png')
+S = 1.4; gy = 437; cx0 = 224
+X = lambda x: (x - cx0) * S
+Y = lambda y: (y - gy) * S
+PL = [(57, 10, 53), (57, 122, 165), (57, 282, 325), (57, 394, 437), (89, 186, 261), (105, 58, 117), (105, 330, 389), (153, 10, 53), (153, 122, 165),
+      (153, 282, 325), (153, 394, 437), (169, 202, 245), (201, 58, 117), (201, 330, 389), (249, 10, 53), (249, 122, 165), (249, 282, 325), (249, 394, 437),
+      (265, 202, 245), (297, 58, 117), (297, 330, 389), (345, 10, 53), (345, 122, 165), (345, 282, 325), (345, 394, 437), (361, 202, 245),
+      (393, 58, 117), (393, 330, 389)]
+build('Rêve étoilé', [dict(name='Palais', img=a, x=X(0), y=Y(0), scale=S)], 'star-dream', music='57 - Menu 2.mp3', author='SSF',
+      sky=['#fff4fb', '#ffd6f0'], ground=[dict(x1=X(6), y1=0, x2=X(442), y2=40, style='none')],
+      platforms=[dict(x1=X(x1), x2=X(x2), y=Y(y + 1), style='none') for y, x1, x2 in PL],
+      spawns=[[X(60), 0], [X(390), 0], [X(150), 0], [X(300), 0]], respawn=[0, Y(200)],
+      blast=dict(left=X(0) - 190, right=X(448) + 190, top=Y(0) - 160, bottom=200),
+      camera=dict(left=X(0) - 20, right=X(448) + 20, top=Y(0) - 40, bottom=110))

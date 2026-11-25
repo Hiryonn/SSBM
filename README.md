@@ -109,7 +109,7 @@ Le dossier `ressources/smash-flash/` contient les planches de sprites, décors, 
 Le projet **`projets/Super Smash Flash/`** est déjà prêt à ouvrir (« Ouvrir un projet » dans la version Windows) :
 
 - 30 persos jouables, avec leurs sons : Mario, Luigi, Link, Young Link, Zelda, Sheik, Samus, Pikachu, Jigglypuff, Mewtwo, Kirby, Meta Knight, Fox, Captain Falcon, Mr. Game & Watch, Sonic, Super Sonic, Shadow, Tails, Knuckles, Megaman X, Zero, Cloud, Crono, Lloyd, Inuyasha, Naruto, Mr. Incredible, Blade, Blue ;
-- 4 stages avec leur musique : Champ de bataille, Destination Finale, Temple, Château de Peach.
+- 11 stages avec leur musique : Champ de bataille, Destination Finale, Temple, Château de Peach, Stade Pokémon, Royaume Champignon, Dream Land, Green Hill, Royaume II, Île de Wario, Rêve étoilé.
 
 Ils ont été fabriqués depuis les planches par les scripts de `outils/smash-flash/` (Python 3 + numpy + Pillow) : `python run.py mario link` refait des persos, `python build_stage.py` refait les stages. Chaque perso est décrit dans `outils/smash-flash/specs/<perso>.py` (quelles poses pour quelle anim, réglages des coups) : modifie-le puis relance pour corriger un perso. `python grid.py <planche> apercu.png` montre les poses d'une planche avec leur numéro « rangée.index ». Tu peux aussi tout retoucher directement dans l'éditeur.
 
