@@ -347,3 +347,12 @@ ul.todo { padding-left: 18px; margin: 0 0 10px; display: flex; flex-direction: c
   .side-item span, .side-name, .side-test span, .side-test kbd { display: none; }
   .home, .dash-cols { grid-template-columns: 1fr; }
 }
+
+.sounds { display: flex; flex-direction: column; gap: 4px; }
+.sound-row { display: grid; grid-template-columns: 28px minmax(0,1fr) auto 28px; gap: 6px; align-items: center; font-size: 13px; }
+.sound-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slice-modal { min-width: min(940px, 90vw); }
+.modal:has(.slice-modal) { width: min(980px, 96vw); }
+.slice-wrap { max-height: 50vh; overflow: auto; border-radius: 8px; background: #0c0f2a; }
+.slice-cv { display: block; image-rendering: pixelated; }
+.slice-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0 10px; max-height: 18vh; overflow-y: auto; }

@@ -66,6 +66,7 @@ export class Fighter {
 
   // ------------------------------------------------------------------ boucle
   step(match) {
+    this.match = match;
     const c = this.ctrl;
     if (this.dead) { this.stepDead(match); return; }
     if (this.hitlag > 0) { this.hitlag--; return; }
@@ -165,6 +166,7 @@ export class Fighter {
       this.fastFall = false;
       this.setState('air', 'doubleJump');
       this.doubleJumped = true;
+      this.match?.fighterSound(this, this.def.sfx?.jump, 0.8);
       match?.fx.puff(this.x, this.y, 0.7);
       return true;
     }
@@ -365,6 +367,7 @@ export class Fighter {
 
   startMoveObj(id, m) {
     this.grabDone = false;
+    if (m.sfx) this.match?.fighterSound(this, m.sfx);
     this.move = m; this.moveId = id;
     this.hitSets = new Map(); this.chargeT = 0; this.projDone = new Set(); this.impulseDone = false;
     this.attackFlip = !!m.flip;
@@ -425,6 +428,7 @@ export class Fighter {
       this.grounded = false; this.ground = null;
       this.doubleJumped = false;
       this.setState('air', 'jump');
+      this.match?.fighterSound(this, this.def.sfx?.jump, 0.8);
       match?.fx.puff(this.x, this.y, 0.6);
     }
   }
@@ -780,7 +784,7 @@ export class Fighter {
     this.hitlag = hl;
     if (attacker) attacker.hitlag = hl;
     this.attackFlip = false; this.move = null; this.moveId = null; this.fastFall = false;
-    if (kb >= K.tumbleKB) this.setState('tumble', 'tumble');
+    if (kb >= K.tumbleKB) { this.setState('tumble', 'tumble'); match?.fighterSound(this, this.def.sfx?.hurt); }
     else this.setState('hitstun', this.grounded ? 'hurt' : 'hurtAir');
     this.jumpsLeft = Math.max(this.jumpsLeft, this.S.jumps - 1);
     this.airdodgeUsed = false;
@@ -791,6 +795,7 @@ export class Fighter {
 
   // ------------------------------------------------------------------ mort / réapparition
   die(match) {
+    match?.fighterSound(this, this.def.sfx?.ko);
     this.dropGrab();
     this.dead = true; this.deadT = 0; this.releaseLedge();
     this.stocks--;

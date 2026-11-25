@@ -8,7 +8,9 @@ import { knockback } from '../engine/constants.js';
 import { unpack, repack, addRGBA, nextFreeIndex, imageFileToRGBA, sliceSheet, keyOutCorner } from '../data/pack.js';
 import { parseACT } from '../import/sff.js';
 import { toBase64 } from '../import/inflate.js';
+import { sliceSheet as autoSlice, cropSprite } from '../import/slicer.js';
 import { launchTraining } from './menus.js';
+import { playSample, unlockAudio } from '../engine/audio.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const CAT_LABEL = { sol: 'Au sol', smash: 'Smashs', air: 'Aériens', special: 'Spéciaux', chope: 'Chopes' };
@@ -275,10 +277,51 @@ screens.chareditor = (id, keep) => {
       st('Largeur du corps', 'width', 1, 4, 80, 'Sert aux collisions avec le décor et au rebord.'),
       st('Hauteur du corps', 'height', 1, 10, 200),
       h('h3', null, 'Couleurs'), costumes,
+      h('h3', null, 'Sons'), soundsBox(),
       h('h3', null, 'Sprites'),
       h('p', { class: 'muted small' }, 'Ajoute tes propres images (PNG avec transparence ou planche de sprites) pour créer de nouvelles anims.'),
-      h('button', { class: 'btn small', onclick: addSprites }, 'Ajouter des sprites…'));
+      h('div', { class: 'row gap' },
+        h('button', { class: 'btn small', onclick: addSprites }, 'Ajouter des sprites…'),
+        h('button', { class: 'btn small', title: 'Détecte les poses d\'une planche brute et crée une anim par rangée', onclick: autoSheet }, 'Découper une planche automatiquement…')));
     renderCostumes();
+  };
+
+  // ---- Sons du perso : liste, écoute, import, sons de saut / KO / éjection
+  const soundOptions = () => [['', '— aucun —'], ...Object.keys(def.sounds || {}).map((k) => [k, k])];
+  const play = (k) => { unlockAudio(); if (k && def.sounds?.[k]) playSample(def.sounds[k]); };
+  const soundsBox = () => {
+    def.sounds = def.sounds || {}; def.sfx = def.sfx || {};
+    const box = h('div', { class: 'sounds' });
+    const keys = Object.keys(def.sounds);
+    if (!keys.length) box.append(h('p', { class: 'muted small' }, 'Aucun son. Ajoute des fichiers .wav / .mp3, puis choisis-les ici et dans chaque coup.'));
+    for (const k of keys) {
+      box.append(h('div', { class: 'sound-row' },
+        h('button', { class: 'mini', title: 'Écouter', onclick: () => play(k) }, '▶'),
+        h('span', null, k), h('small', { class: 'muted' }, Math.round(def.sounds[k].length * 0.75 / 1024) + ' Ko'),
+        h('button', { class: 'mini', title: 'Supprimer', onclick: () => {
+          delete def.sounds[k];
+          for (const s of Object.keys(def.sfx)) if (def.sfx[s] === k) delete def.sfx[s];
+          for (const m of Object.values(def.moves)) if (m.sfx === k) delete m.sfx;
+          commit(); renderLeft();
+        } }, '✕')));
+    }
+    box.append(
+      h('div', { class: 'grid2' },
+        select('Son du saut', def.sfx.jump || '', soundOptions(), (v) => { if (v) def.sfx.jump = v; else delete def.sfx.jump; commit(); play(v); }),
+        select('Son quand il est éjecté', def.sfx.hurt || '', soundOptions(), (v) => { if (v) def.sfx.hurt = v; else delete def.sfx.hurt; commit(); play(v); }),
+        select('Son du KO', def.sfx.ko || '', soundOptions(), (v) => { if (v) def.sfx.ko = v; else delete def.sfx.ko; commit(); play(v); })),
+      h('button', { class: 'btn small', onclick: async () => {
+        const files = await pickFiles({ multiple: true, accept: 'audio/*' });
+        for (const f of files) {
+          if (f.size > 3e6) { toast(f.name + ' : trop lourd (3 Mo max)', 'bad'); continue; }
+          const b64 = toBase64(new Uint8Array(await f.arrayBuffer()));
+          let key = f.name.replace(/\.\w+$/, '');
+          while (def.sounds[key] && def.sounds[key] !== b64) key += '_';
+          def.sounds[key] = 'data:' + (f.type || 'audio/wav') + ';base64,' + b64;
+        }
+        if (files.length) { commit(); renderLeft(); }
+      } }, 'Ajouter des sons…'));
+    return box;
   };
 
   const reloadBank = async () => {
@@ -326,6 +369,76 @@ screens.chareditor = (id, keep) => {
     await reloadBank();
     toast(added.length + ' sprite(s) ajouté(s)');
     E.tab = 'anims'; renderAll(); setAnim(E.anim);
+  };
+
+  // Découpage automatique d'une planche brute (fond uni, poses séparées) : une anim par rangée
+  const autoSheet = async () => {
+    const [file] = await pickFiles({ multiple: false, accept: 'image/*' });
+    if (!file) return;
+    const img = await imageFileToRGBA(file);
+    const res = autoSlice(img, {});
+    if (!res.rows.length) { toast('Aucune pose détectée sur cette planche.', 'bad'); return; }
+    const pick = res.rows.map(() => true);
+    const flip = h('input', { type: 'checkbox' });
+    const grp = h('input', { class: 'inp', type: 'number', value: 8000 });
+    const dur = h('input', { class: 'inp', type: 'number', value: 6, min: 1 });
+    const sc = Math.min(1.5, 900 / img.w);
+    const cv = h('canvas', { width: Math.round(img.w * sc), height: Math.round(img.h * sc), class: 'slice-cv' });
+    const paint = () => {
+      const ctx = cv.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = '#20264f'; ctx.fillRect(0, 0, cv.width, cv.height);
+      const tmp = document.createElement('canvas'); tmp.width = img.w; tmp.height = img.h;
+      tmp.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(img.rgba), img.w, img.h), 0, 0);
+      ctx.drawImage(tmp, 0, 0, cv.width, cv.height);
+      res.rows.forEach((row, r) => {
+        ctx.strokeStyle = pick[r] ? '#ffd23f' : 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1;
+        row.forEach((c) => ctx.strokeRect(c.x0 * sc + 0.5, c.y0 * sc + 0.5, (c.x1 - c.x0) * sc, (c.y1 - c.y0) * sc));
+        const c = row[0];
+        ctx.fillStyle = pick[r] ? '#ffd23f' : '#888';
+        ctx.font = 'bold 12px system-ui';
+        ctx.fillText(String(r), Math.max(0, c.x0 * sc - 14), c.y0 * sc + 12);
+      });
+    };
+    const list = h('div', { class: 'slice-rows' }, res.rows.map((row, r) => {
+      const ck = h('input', { type: 'checkbox', checked: true });
+      ck.addEventListener('change', () => { pick[r] = ck.checked; paint(); });
+      return h('label', { class: 'field check' }, ck, h('span', null, 'Rangée ' + r + ' · ' + row.length + ' pose(s)'));
+    }));
+    paint();
+    const ok = await modal('Découper « ' + file.name + ' »', h('div', { class: 'form slice-modal' },
+      h('p', { class: 'muted small' }, res.rows.reduce((s, r) => s + r.length, 0) + ' poses détectées. Décoche les rangées inutiles (texte, crédits, effets) : chaque rangée cochée devient une anim.'),
+      h('div', { class: 'slice-wrap' }, cv), list,
+      h('div', { class: 'grid2' },
+        h('label', { class: 'field' }, h('span', null, 'Groupe de sprites'), grp),
+        h('label', { class: 'field' }, h('span', null, 'Durée de chaque image'), dur)),
+      h('label', { class: 'field check' }, flip, h('span', null, 'Les poses regardent vers la gauche (les retourner)'))),
+    [{ label: 'Annuler', value: false }, { label: 'Créer les anims', value: true, primary: true }]);
+    if (!ok) return;
+    const up = await unpack(def);
+    const g = parseInt(grp.value, 10) || 8000;
+    const t = Math.max(1, parseInt(dur.value, 10) || 6);
+    let n = Math.max(...animNos(), 0) + 1, made = 0, first = null;
+    for (let r = 0; r < res.rows.length; r++) {
+      if (!pick[r]) continue;
+      const frames = [];
+      for (const c of res.rows[r]) {
+        const sp = cropSprite(img, res, c, flip.checked);
+        const i = nextFreeIndex(up, g);
+        addRGBA(up, g, i, sp.w, sp.h, sp.rgba, sp.ax, sp.ay);
+        const hb = [-sp.ax, -sp.ay, sp.w - sp.ax, sp.h - sp.ay - (sp.h - 1 - sp.ay)];
+        frames.push({ g, i, ox: 0, oy: 0, t, fh: false, fv: false, trans: '', c1: [], c2: [[Math.round(hb[0] * 0.7), hb[1], Math.round(hb[2] * 0.7), 0]] });
+      }
+      def.anims[n] = { loop: 0, frames };
+      if (first == null) first = n;
+      n++; made++;
+    }
+    await repack(def, up);
+    commit();
+    await reloadBank();
+    toast(made + ' anim(s) créée(s) à partir de la planche');
+    E.tab = 'anims'; renderAll(); if (first != null) setAnim(first);
   };
 
   // --------------------------------------------------------------- panneau droit
@@ -378,6 +491,9 @@ screens.chareditor = (id, keep) => {
       h('p', { class: 'muted small' }, 'Les hitbox rouges des éléments couverts infligent ce coup. Angle : 0 = devant, 90 = haut, 270 = bas (météore). Base = éjection minimale, Croissance = augmentation avec les %.'));
     // Options
     const elemOpts = [['', '—'], ...Array.from({ length: def.anims[m.anim]?.frames.length || animCount }, (_, k) => [k, 'élément ' + k])];
+    wrap.append(h('div', { class: 'row gap' },
+      select('Son du coup', m.sfx || '', soundOptions(), (v) => { if (v) m.sfx = v; else delete m.sfx; commit(); play(v); }),
+      m.sfx ? h('button', { class: 'btn small', onclick: () => play(m.sfx) }, '▶ Écouter') : null));
     wrap.append(h('h4', null, 'Comportement'),
       h('div', { class: 'grid2' },
         info.cat === 'air' || m.landLag ? num('Retard à l\'atterrissage', m.landLag || 0, (v) => { m.landLag = v; commit(); }, { min: 0, max: 60 }) : null,

@@ -70,6 +70,8 @@ Tout se change dans **Options**.
 - **Hitbox** : dessine-les à la souris (rouge = frappe, bleu = zone touchable), déplace-les et redimensionne-les avec les poignées.
 - **États** : quelle anim jouer à l'attente, la marche, le saut, le bouclier, quand on est touché…
 - **Fiche** : nom, échelle, poids, vitesses, sauts, gravité, couleurs alternatives (palettes .act ou teinte), ajout de tes propres sprites PNG (y compris des planches de sprites).
+- **Sons** (dans la Fiche) : importe des MP3/WAV/OGG, écoute-les, choisis le son du saut, de l'éjection et du KO. Chaque coup a son propre « Son du coup ».
+- **Découper une planche automatiquement…** (dans la Fiche) : ouvre une planche de sprites brute (fond uni), le logiciel détecte chaque pose, les range par rangée et crée une anim par rangée cochée.
 - **▶ Tester** lance un entraînement sans enregistrer (H affiche les hitbox, R remet à zéro).
 - Ctrl+Z / Ctrl+Y pour annuler et rétablir, Ctrl+S pour enregistrer.
 
@@ -103,6 +105,13 @@ Le .exe d'un jeu exporté garde l'icône de PlatFight Studio.
 ## Ressources de Super Smash Flash
 
 Le dossier `ressources/smash-flash/` contient les planches de sprites, décors, sons, musiques et logos du jeu Super Smash Flash (2006), pour fabriquer tes persos et stages. Voir `ressources/smash-flash/LISEZMOI.md`.
+
+Le projet **`projets/Super Smash Flash/`** est déjà prêt à ouvrir (« Ouvrir un projet » dans la version Windows) :
+
+- 8 persos jouables, avec leurs sons : Mario, Luigi, Link, Young Link, Pikachu, Kirby, Fox, Captain Falcon ;
+- 4 stages avec leur musique : Champ de bataille, Destination Finale, Temple, Château de Peach.
+
+Ils ont été fabriqués depuis les planches par les scripts de `outils/smash-flash/` (Python 3 + numpy + Pillow) : `python run.py mario link` refait des persos, `python build_stage.py` refait les stages. Chaque perso est décrit dans `outils/smash-flash/specs/<perso>.py` (quelles poses pour quelle anim, réglages des coups) : modifie-le puis relance pour corriger un perso. Tu peux aussi tout retoucher directement dans l'éditeur.
 
 ## Fichiers
 

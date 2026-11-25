@@ -83,6 +83,41 @@ export function sfx(kind, power = 5) {
   }
 }
 
+// ---- Sons propres aux persos (fichiers .wav / .mp3 rangés en data URL dans le perso)
+const sampleCache = new Map(); // data URL -> Promise<AudioBuffer|null>
+function dataToBuffer(url) {
+  const comma = url.indexOf(',');
+  const bin = atob(url.slice(comma + 1));
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8.buffer;
+}
+export function loadSample(url) {
+  const a = ctx();
+  if (!a || !url) return Promise.resolve(null);
+  let p = sampleCache.get(url);
+  if (!p) {
+    p = new Promise((res) => {
+      try { a.decodeAudioData(dataToBuffer(url), (b) => res(b), () => res(null)); } catch (e) { res(null); }
+    });
+    sampleCache.set(url, p);
+  }
+  return p;
+}
+export function playSample(url, gain = 1) {
+  const a = ctx();
+  if (!a || !url || volume.sfx <= 0) return;
+  loadSample(url).then((buf) => {
+    if (!buf) return;
+    const s = a.createBufferSource();
+    s.buffer = buf;
+    const g = a.createGain();
+    g.gain.value = volume.sfx * gain;
+    s.connect(g); g.connect(master);
+    s.start();
+  });
+}
+
 let musicEl = null;
 export function playMusic(src) {
   stopMusic();

@@ -5,7 +5,7 @@ import { SpriteBank, AnimPlayer, drawFrame } from './sprites.js';
 import { Controller, endFrameInput } from './input.js';
 import { CPU } from './ai.js';
 import { K } from './constants.js';
-import { sfx, playMusic, stopMusic, pauseMusic } from './audio.js';
+import { sfx, playMusic, stopMusic, pauseMusic, playSample, loadSample } from './audio.js';
 import { PLAYER_COLORS } from '../data/defs.js';
 
 const overlap = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
@@ -129,6 +129,8 @@ export class Match {
       if (land) { f.y = land.y; f.onLand(null, land); f.setState('idle', 'idle'); }
       m.fighters.push(f);
     }
+    // Préchargement des sons des persos
+    for (const f of m.fighters) for (const url of Object.values(f.def.sounds || {})) loadSample(url);
     m.projectiles = [];
     m.fx = new FX();
     m.time = 0;
@@ -144,6 +146,15 @@ export class Match {
   }
 
   sfx(kind, p) { sfx(kind, p); }
+
+  // Son d'un perso (clé dans def.sounds) ; on évite d'en empiler trop
+  fighterSound(f, key, gain = 1) {
+    const url = key && f.def.sounds?.[key];
+    if (!url || this.phase === 'intro') return;
+    if (f.lastSound === key && this.time - (f.lastSoundT || -99) < 6) return;
+    f.lastSound = key; f.lastSoundT = this.time;
+    playSample(url, gain);
+  }
 
   spawnProjectile(owner, p) {
     if (p.anim == null || !owner.def.anims[p.anim]) return;

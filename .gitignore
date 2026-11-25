@@ -7,3 +7,4 @@ package-lock.json
 desktop/package-lock.json
 # Le .exe dépasse la limite de 100 Mo de GitHub : il ne doit jamais être commité
 /PlatFight Studio.exe
+__pycache__/
