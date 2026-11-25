@@ -1,0 +1,18 @@
+Array.prototype.randomize = function() {
+ var i = this.length;
+ if (i == 0) return;
+ while (--i) {
+  var j = Math.floor(Math.random()*(i+1));
+  var tmp1 = this[i];
+  var tmp2 = this[j];
+  this[i] = tmp2;
+  this[j] = tmp1;
+ }
+ return this;
+}
+
+//Example:
+/*
+var arr = new Array(1,2,3,4,5,6,7,8,9);
+trace(arr.randomize());
+*/

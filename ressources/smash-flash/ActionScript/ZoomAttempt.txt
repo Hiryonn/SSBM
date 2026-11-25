@@ -1,0 +1,45 @@
+onClipEvent (load) {
+	mpt = {x:275, y:200};
+	_global.scf = 1;
+	times = 0;
+	function checkZoom() {
+		if (onscreen) {
+			zoomIn = false;
+			zoomOut = true;
+		} else {
+			zoomIn = true;
+			zoomOut = false;
+		}
+	}
+	function modifyZoom() {
+		if (zoomIn and _global.scf<1.05) {
+			if (_global.scf<1) {
+				_global.scf = 1;
+			}
+			_global.scf += .01;
+		} else if (zoomOut and _global.scf>.95) {
+			if (_global.scf>1) {
+				_global.scf = 1;
+			}
+			_global.scf -= .01;
+		}
+	}
+}
+onClipEvent (enterFrame) {
+	checkZoom();
+	modifyZoom();
+	if (zoomIn and times<0) {
+		times += 1;
+		this._x = _global.scf*(this._x-mpt.x)+mpt.x;
+		this._y = _global.scf*(this._y-mpt.y)+mpt.y;
+		this._xscale *= _global.scf;
+		this._yscale *= _global.scf;
+	} else if (zoomOut and times>-10) {
+		times -= 1;
+		this._x = _global.scf*(this._x-mpt.x)+mpt.x;
+		this._y = _global.scf*(this._y-mpt.y)+mpt.y;
+		this._xscale *= _global.scf;
+		this._yscale *= _global.scf;
+	} else {
+	}
+}

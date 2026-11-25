@@ -1,0 +1,10 @@
+node_modules/
+desktop/node_modules/
+desktop/sortie/
+desktop/index.html
+PlatFight-Studio-Windows/PlatFight Studio/PlatFight Studio.exe
+package-lock.json
+desktop/package-lock.json
+# Le .exe dépasse la limite de 100 Mo de GitHub : il ne doit jamais être commité
+/PlatFight Studio.exe
+__pycache__/

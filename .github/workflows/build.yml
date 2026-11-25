@@ -1,0 +1,55 @@
+name: Build PlatFight Studio
+
+# Se lance quand tu publies une Release (tag du type v1.2.0),
+# ou à la main depuis l'onglet Actions de GitHub.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: builder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Le jeu est assemblé depuis src/ (crée builder/index.html)
+      - name: Assembler le jeu depuis src/
+        working-directory: .
+        run: |
+          npm install
+          node build.mjs --min
+
+      - name: Numéro de version depuis le tag
+        if: github.event_name == 'release' && startsWith(github.ref_name, 'v')
+        run: npm version "${{ github.ref_name }}" --no-git-tag-version --allow-same-version
+
+      - run: npm install
+
+      - run: npm run build
+
+      - name: Garder le build (onglet Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: PlatFight-Studio-Windows
+          path: |
+            builder/dist/*.zip
+            builder/dist/*.exe
+
+      - name: Publier dans une Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            builder/dist/*.zip
+            builder/dist/*.exe

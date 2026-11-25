@@ -1,0 +1,11 @@
+firsttime = SharedObject.getLocal("timenum");
+if (firsttime.data.iffirst == undefined){
+	firsttime.data.iffirst = "no";
+	firsttime.flush();
+	_root.gotoAndStop("new");
+} else {
+	computer = System.capabilities.os;
+	_root.gotoAndStop("old");
+}
+SharedObject.Flush.Failed
+stop();
