@@ -1,0 +1,40 @@
+{
+  "name": "platfight-studio",
+  "productName": "PlatFight Studio",
+  "version": "1.1.0",
+  "description": "Créateur de jeux de combat façon Smash, compatible persos Mugen / JUS",
+  "author": "Hiryonn",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.hiryonn.platfightstudio",
+    "productName": "PlatFight Studio",
+    "artifactName": "PlatFight-Studio-${version}-windows.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "zip",
+        "portable"
+      ],
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "PlatFight-Studio-${version}-portable.exe"
+    }
+  }
+}
